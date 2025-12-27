@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="mirai-core-all-2.13.0-RC2-all">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/bots/libs/mirai-core-all-2.13.0-RC2-all.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

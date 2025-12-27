@@ -1,0 +1,17 @@
+<component name="libraryTable">
+  <library name="animated-gif-lib-1.0">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/libs/animated-gif-lib-1.0.jar!/" />
+      <root url="jar://$PROJECT_DIR$/libs/gson-2.8.5.jar!/" />
+      <root url="jar://$PROJECT_DIR$/libs/jaudiotagger-2.2.6-SNAPSHOT.jar!/" />
+      <root url="jar://$PROJECT_DIR$/libs/JNative.jar!/" />
+      <root url="jar://$PROJECT_DIR$/libs/jsoup-1.11.3.jar!/" />
+      <root url="jar://$PROJECT_DIR$/libs/mirai-core-all-2.9.2-all.jar!/" />
+      <root url="jar://$PROJECT_DIR$/libs/sqlite-jdbc-3.39.2.0.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="file://$PROJECT_DIR$/libs/kotlin" />
+    </SOURCES>
+  </library>
+</component>
