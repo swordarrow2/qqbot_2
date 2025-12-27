@@ -23,19 +23,8 @@ public class DataPersistenter {
     }
 
     public synchronized static boolean save(BaseModule module) {
-//        if (module instanceof ICommonData) {
-//            ICommonData iCommonData = (ICommonData) module;
-//            File file = SJFPathTool.getPersistentPath(module.getModuleName() + ".json");
-//            try {
-//                FileTool.saveFile(file, JSON.toJson(iCommonData.getData()).getBytes(StandardCharsets.UTF_8));
-//            } catch (IOException e) {
-//                ExceptionCatcher.getInstance().uncaughtException(e);
-//            }
-//        }
-
         Class<?> moduleClass = module.getClass();
-        //Field[] fields = classObj.getFields();        //只能获取public
-        Field[] fields = moduleClass.getDeclaredFields();  //public和private
+        Field[] fields = moduleClass.getDeclaredFields();
         for (Field field : fields) {
             field.setAccessible(true);
             if (field.isAnnotationPresent(BotData.class)) {
@@ -53,39 +42,9 @@ public class DataPersistenter {
         return true;
     }
 
-    public synchronized static <T> boolean read(BaseModule module) {
-//        if (module instanceof ICommonData) {
-//            ICommonData<T> iCommonData = (ICommonData) module;
-//            File file = SJFPathTool.getPersistentPath(module.getModuleName() + ".json");
-//            Type[] types = iCommonData.getClass().getGenericInterfaces();
-//            Type actualType = null;
-//            for (Type ta : types) {
-//                ParameterizedType pt = (ParameterizedType) ta;
-//                if (pt.getRawType() == ICommonData.class) {
-//                    Type[] actualTypes = pt.getActualTypeArguments();
-//                    actualType = actualTypes[0];
-//                }
-//            }
-//            try {
-//                if (file.exists()) {
-//                    if (actualType != null) {
-//                        String json = FileTool.readString(file);
-//                        if (json.equals("null")) {
-//                            iCommonData.setData((T) Class.forName(actualType.getTypeName()).getDeclaredConstructor().newInstance());
-//                        } else {
-//                            iCommonData.setData((T) JSON.fromJson(json, actualType));
-//                        }
-//                    }
-//                } else {
-//                    iCommonData.setData((T) Class.forName(actualType.getTypeName()).getDeclaredConstructor().newInstance());
-//                }
-//            } catch (IOException | InstantiationException | IllegalAccessException | ClassNotFoundException | NoSuchMethodException | InvocationTargetException e) {
-//                e.printStackTrace();
-//            }
-//        }
+    public synchronized static boolean read(BaseModule module) {
         Class<?> moduleClass = module.getClass();
-        //Field[] fields = classObj.getFields();        //只能获取public
-        Field[] fields = moduleClass.getDeclaredFields();  //public和private
+        Field[] fields = moduleClass.getDeclaredFields();
         for (Field field : fields) {
             field.setAccessible(true);
             if (field.isAnnotationPresent(BotData.class)) {
@@ -97,7 +56,7 @@ public class DataPersistenter {
                         continue;
                     }
                     String json = FileTool.readString(file);
-                    if (json == null || json.equals("null")) {
+                    if (json.equals("null")) {
                         field.set(module, field.getType().getDeclaredConstructor().newInstance());
                     } else {
                         field.set(module, JSON.fromJson(json, field.getGenericType()));
@@ -110,10 +69,4 @@ public class DataPersistenter {
         }
         return true;
     }
-
-//    public interface ICommonData<T> {
-//        T getData();
-//
-//        void setData(T data);
-//    }
 }

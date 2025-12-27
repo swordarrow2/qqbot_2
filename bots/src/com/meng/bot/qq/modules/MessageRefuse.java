@@ -7,17 +7,17 @@ import com.meng.bot.config.QQGroupConfig;
 import com.meng.bot.qq.BaseModule;
 import com.meng.bot.qq.BotWrapper;
 import com.meng.bot.qq.handler.group.IGroupMessageEvent;
+import com.meng.bot.qq.handler.group.INudgeEvent;
 import com.meng.tools.sjf.SJFExecutors;
+import net.mamoe.mirai.contact.MemberPermission;
 import net.mamoe.mirai.event.events.GroupMessageEvent;
+import net.mamoe.mirai.event.events.NudgeEvent;
 import net.mamoe.mirai.message.data.MessageChain;
+import net.mamoe.mirai.message.data.MessageUtils;
 
+import java.util.HashSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
-import java.util.HashSet;
-
-import com.meng.bot.qq.handler.group.INudgeEvent;
-import net.mamoe.mirai.event.events.NudgeEvent;
-import net.mamoe.mirai.message.data.MessageUtils;
 
 /**
  * @author: 司徒灵羽
@@ -41,14 +41,8 @@ public class MessageRefuse extends BaseModule implements IGroupMessageEvent, INu
 
     @Override
     public MessageRefuse load() {
-        SJFExecutors.executeAtFixedRate(new Runnable() {
-
-            @Override
-            public void run() {
-                for (FireWallBean mb : msgMap.values()) {
-                    mb.lastSeconedMsgs = 0;
-                }
-            }
+        SJFExecutors.executeAtFixedRate(() -> {
+            msgMap.values().forEach(v -> v.lastSeconedMsgs = 0);
         }, 1, 1, TimeUnit.SECONDS);
         return this;
     }
@@ -56,13 +50,7 @@ public class MessageRefuse extends BaseModule implements IGroupMessageEvent, INu
     @Override
     public boolean onNudge(NudgeEvent event) {
         long qqId = event.getFrom().getId();
-        if (configManager.isBlackQQ(qqId)) {
-            return true;
-        }
-        if (configManager.isBlockQQ(qqId)) {
-            return true;
-        }
-        return false;
+        return configManager.isBlackQQ(qqId) || configManager.isBlockQQ(qqId);
     }
 
     @Override
@@ -77,7 +65,17 @@ public class MessageRefuse extends BaseModule implements IGroupMessageEvent, INu
         if (msg.startsWith(".bot")) {
             QQGroupConfig cfg = configManager.getGroupConfig(groupId);
             Person personFromQQ = configManager.getPersonFromQQ(qqId);
-            if (qqId == botWrapper.getId() || (personFromQQ != null && personFromQQ.hasAdminPermission()) || botWrapper.getGroup(groupId).get(qqId).getPermission().getLevel() > 0) {
+            MemberPermission permission = null;
+            try {
+                permission = botWrapper.getGroup(groupId).get(qqId).getPermission();
+            } catch (NullPointerException e) {
+                if (botWrapper.debug) {
+                    e.printStackTrace();
+                }
+            }
+            if (qqId == botWrapper.getId()
+                    || (personFromQQ != null && personFromQQ.hasAdminPermission())
+                    || (permission != null && permission.getLevel() > 0)) {
                 if (msg.equals(".bot on")) {
                     cfg.setFunctionEnable(Functions.GroupMessageEvent);
                     sendQuote(event, "已启用本群响应");
@@ -89,13 +87,10 @@ public class MessageRefuse extends BaseModule implements IGroupMessageEvent, INu
                 return true;
             }
         }
-        if (!configManager.getGroupConfig(groupId).isFunctionEnabled(Functions.GroupMessageEvent)) {
-            return true;
-        }
-        if (configManager.isBlackQQ(qqId)) {
-            return true;
-        }
-        if (configManager.isBlockQQ(qqId) || configManager.isBlockWord(event.getMessage().contentToString())) {
+        if (!configManager.getGroupConfig(groupId).isFunctionEnabled(Functions.GroupMessageEvent)
+                || configManager.isBlackQQ(qqId)
+                || configManager.isBlockQQ(qqId)
+                || configManager.isBlockWord(event.getMessage().contentToString())) {
             return true;
         }
         if (unblocks.contains(qqId)) {

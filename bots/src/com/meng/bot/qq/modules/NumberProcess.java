@@ -52,42 +52,20 @@ public class NumberProcess extends BaseModule implements IGroupMessageEvent {
                 int a1 = Integer.parseInt(firstArg);
                 String op = iter.next();
                 int a2 = Integer.parseInt(iter.next());
-                String resu = "failed";
-                switch (op) {
-                    case "+":
-                        resu = "result:" + (a1 + a2);
-                        break;
-                    case "-":
-                        resu = "result:" + (a1 - a2);
-                        break;
-                    case "*":
-                        resu = "result:" + (a1 * a2);
-                        break;
-                    case "/":
-                        resu = "result:" + (a1 / a2);
-                        break;
-                    case ">>":
-                        resu = "result:" + (a1 >> a2);
-                        break;
-                    case ">>>":
-                        resu = "result:" + (a1 >>> a2);
-                        break;
-                    case "<<":
-                        resu = "result:" + (a1 << a2);
-                        break;
-                    case "^":
-                        resu = "result:" + (a1 ^ a2);
-                        break;
-                    case "%":
-                        resu = "result:" + (a1 % a2);
-                        break;
-                    case "|":
-                        resu = "result:" + (a1 | a2);
-                        break;
-                    case "&":
-                        resu = "result:" + (a1 & a2);
-                        break;
-                }
+                String resu = switch (op) {
+                    case "+" -> "result:" + (a1 + a2);
+                    case "-" -> "result:" + (a1 - a2);
+                    case "*" -> "result:" + (a1 * a2);
+                    case "/" -> "result:" + (a1 / a2);
+                    case ">>" -> "result:" + (a1 >> a2);
+                    case ">>>" -> "result:" + (a1 >>> a2);
+                    case "<<" -> "result:" + (a1 << a2);
+                    case "^" -> "result:" + (a1 ^ a2);
+                    case "%" -> "result:" + (a1 % a2);
+                    case "|" -> "result:" + (a1 | a2);
+                    case "&" -> "result:" + (a1 & a2);
+                    default -> "failed";
+                };
                 sendGroupMessage(groupId, resu);
             } catch (Exception e) {
                 sendGroupMessage(groupId, e.toString());
@@ -111,7 +89,7 @@ public class NumberProcess extends BaseModule implements IGroupMessageEvent {
         return false;
     }
 
-    private Map<Integer, String> dictionary = new LinkedHashMap<Integer, String>() {
+    private final Map<Integer, String> dictionary = new LinkedHashMap<>() {
         {
             put(114514, "114514");
             put(58596, "114*514");

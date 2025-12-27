@@ -8,8 +8,9 @@ import com.meng.bot.qq.BotWrapper;
 import com.meng.bot.qq.commonModules.UserInfoManager;
 import com.meng.bot.qq.handler.group.IGroupMessageEvent;
 import com.meng.tools.normal.TimeFormater;
-import java.util.ArrayList;
 import net.mamoe.mirai.event.events.GroupMessageEvent;
+
+import java.util.ArrayList;
 
 /**
  * @author 司徒灵羽

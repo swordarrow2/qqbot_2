@@ -8,9 +8,9 @@ import com.meng.tools.normal.TextLexer;
 import net.mamoe.mirai.event.events.FriendMessageEvent;
 import net.mamoe.mirai.event.events.GroupMessageEvent;
 
-public class IDCalculate extends BaseModule implements IFriendMessageEvent,IGroupMessageEvent {
+public class IDCalculate extends BaseModule implements IFriendMessageEvent, IGroupMessageEvent {
 
-    private final int[] magics = {7, 9,10, 5, 8, 4, 2, 1, 6, 3, 7, 9, 10, 5, 8, 4, 2}; //魔法师的味道
+    private final int[] magics = {7, 9, 10, 5, 8, 4, 2, 1, 6, 3, 7, 9, 10, 5, 8, 4, 2};
 
     public IDCalculate(BotWrapper botHelper) {
         super(botHelper);
@@ -47,16 +47,16 @@ public class IDCalculate extends BaseModule implements IFriendMessageEvent,IGrou
         }
         char[] chars = msg.toCharArray();
         if (!TextLexer.isNumber(chars)) {
-            return null; 
+            return null;
         }
         StringBuilder builder = new StringBuilder(msg);
         int sum = 0;
-        for (int i = 0;i < chars.length;++i) {
+        for (int i = 0; i < chars.length; ++i) {
             sum += (chars[i] - '0') * magics[i];
         }
         int tmp = sum % 11;
         int finalResult = (12 - tmp) % 11;
-        builder.append(finalResult == 10 ? "X": finalResult);
+        builder.append(finalResult == 10 ? "X" : finalResult);
         return builder.toString();
     }
 }

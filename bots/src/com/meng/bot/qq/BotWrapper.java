@@ -1,12 +1,5 @@
 package com.meng.bot.qq;
 
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
-import java.util.*;
-
 import com.meng.bot.config.ConfigManager;
 import com.meng.tools.normal.FileFormat;
 import com.meng.tools.normal.FileTool;
@@ -20,6 +13,13 @@ import net.mamoe.mirai.contact.file.AbsoluteFile;
 import net.mamoe.mirai.event.events.GroupMessageEvent;
 import net.mamoe.mirai.message.data.*;
 import net.mamoe.mirai.utils.ExternalResource;
+
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
+import java.util.*;
 
 public class BotWrapper {
     public static final String userAgent = "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.198 Safari/537.36 QIHU 360EE";

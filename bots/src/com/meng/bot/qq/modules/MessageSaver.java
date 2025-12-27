@@ -4,7 +4,6 @@ import com.meng.bot.qq.BaseModule;
 import com.meng.bot.qq.BotWrapper;
 import com.meng.bot.qq.handler.group.IGroupMessageEvent;
 import com.meng.tools.normal.Network;
-
 import net.mamoe.mirai.event.events.GroupMessageEvent;
 import net.mamoe.mirai.message.data.FlashImage;
 

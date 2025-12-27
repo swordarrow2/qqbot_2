@@ -1,7 +1,6 @@
 package com.meng.api.touhou;
 
 import com.meng.bot.BasePojo;
-import java.util.function.Consumer;
 
 public class THCharacter extends BasePojo {
     public String name;
@@ -24,18 +23,14 @@ public class THCharacter extends BasePojo {
         final StringBuilder sb = new StringBuilder();
         sb.append(fullName).append("有以下称号:\n");
         final String fn = fullName;
-        THGameDataManager.forEachCharacter(new Consumer<THCharacter>(){
-
-                @Override
-                public void accept(THCharacter thc) {
-                    if (thc.name.equals(fn)) {
-                        if (thc.nick.equals("该角色信息未填坑")) {
-                            return;
-                        }
-                        sb.append(thc.nick).append("(").append(thc.game).append(")\n"); 
-                    }
+        THGameDataManager.forEachCharacter(thc -> {
+            if (thc.name.equals(fn)) {
+                if (thc.nick.equals("该角色信息未填坑")) {
+                    return;
                 }
-            });
+                sb.append(thc.nick).append("(").append(thc.game).append(")\n");
+            }
+        });
         if (sb.toString().equals(fullName + "有以下称号:\n")) {
             return "该角色信息未填坑";
         }

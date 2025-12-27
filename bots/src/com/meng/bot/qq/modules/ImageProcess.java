@@ -32,7 +32,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Function;
-import java.util.function.Predicate;
 
 public class ImageProcess extends BaseModule implements IGroupMessageEvent {
 
@@ -60,13 +59,8 @@ public class ImageProcess extends BaseModule implements IGroupMessageEvent {
         }
         MessageChainBuilder messageChainBuilder = new MessageChainBuilder();
         final MessageChain messageChain = event.getMessage();
-        messageChainBuilder.addAll(new ArrayList<SingleMessage>(messageChain) {{
-            removeIf(new Predicate<SingleMessage>() {
-                @Override
-                public boolean test(SingleMessage singleMessage) {
-                    return !(singleMessage instanceof PlainText);
-                }
-            });
+        messageChainBuilder.addAll(new ArrayList<>(messageChain) {{
+            removeIf(singleMessage -> !(singleMessage instanceof PlainText));
         }});
         SecondaryCommand command = Command.imageTransaction.getSecondaryCommand(messageChainBuilder.asMessageChain().contentToString());
         if (command == null && messageChain.get(Image.Key) == null) {
@@ -111,66 +105,56 @@ public class ImageProcess extends BaseModule implements IGroupMessageEvent {
         private final Map<SecondaryCommand, BiConsumer<Image, GroupMessageEvent>> functionMap;
 
         private ImageProcessNetwok() {
-            functionMap = Collections.unmodifiableMap(new HashMap<SecondaryCommand, BiConsumer<Image, GroupMessageEvent>>() {
+            functionMap = Collections.unmodifiableMap(new HashMap<>() {
                 {
-                    put(SecondaryCommand.searchPicture, new BiConsumer<Image, GroupMessageEvent>() {
-
-                        @Override
-                        public void accept(Image simg, GroupMessageEvent event) {
-                            try {
-                                SauceNaoApi.SauceNaoResult mResults = SauceNaoApi.getSauce(new URL(botWrapper.getUrl(simg)).openStream());
-                                if (mResults.getResults().size() < 1) {
-                                    sendQuote(event, "没有相似度较高的图片");
-                                    return;
-                                }
-                                MessageChainBuilder messageChainBuilder = new MessageChainBuilder();
-                                SauceNaoApi.SauceNaoResult.Result tmpr = mResults.getResults().get(0);
-                                String[] titleAndMetadata = tmpr.mTitle.split("\n", 2);
-                                if (titleAndMetadata.length > 0) {
-                                    messageChainBuilder.append(titleAndMetadata[0]).append("\n");
-                                    if (titleAndMetadata.length == 2) {
-                                        tmpr.mColumns.add(0, titleAndMetadata[1]);
-                                    }
-                                    for (String string : tmpr.mColumns) {
-                                        messageChainBuilder.append(string).append("\n");
-                                    }
-                                }
-                                String imgUrl = tmpr.mThumbnail;
-                                if (tmpr.mExtUrls.size() == 2) {
-                                    String extUrl = tmpr.mExtUrls.get(1);
-                                    if (extUrl.contains("pixiv")) {
-                                        imgUrl = "https://www.pixiv.cat/" + extUrl.substring(extUrl.indexOf("=") + 1) + ".png";
-                                    }
-                                    messageChainBuilder.append("图片&画师:").append(extUrl).append("\n");
-                                    messageChainBuilder.append(tmpr.mExtUrls.get(0)).append("\n");
-                                } else if (tmpr.mExtUrls.size() == 1) {
-                                    String extUrl = tmpr.mExtUrls.get(0);
-                                    if (extUrl.contains("pixiv")) {
-                                        imgUrl = "https://www.pixiv.cat/" + extUrl.substring(extUrl.indexOf("=") + 1) + ".png";
-                                    }
-                                    messageChainBuilder.append("链接:").append(tmpr.mExtUrls.get(0)).append("\n");
-                                }
-                                if (!tmpr.mSimilarity.isEmpty()) {
-                                    messageChainBuilder.append("相似度:").append(tmpr.mSimilarity).append("\n");
-                                }
-                                URL url1 = new URL(imgUrl);
-                                Image element = botWrapper.toImage(url1, event.getGroup());
-                                messageChainBuilder.add(element);
-                                sendMessage(event.getGroup(), messageChainBuilder.asMessageChain());
-                            } catch (IOException e) {
-                                ExceptionCatcher.getInstance().uncaughtException(Thread.currentThread(), e);
-                                sendMessage(event, e.toString());
+                    put(SecondaryCommand.searchPicture, (simg, event) -> {
+                        try {
+                            SauceNaoApi.SauceNaoResult mResults = SauceNaoApi.getSauce(new URL(botWrapper.getUrl(simg)).openStream());
+                            if (mResults.getResults().size() < 1) {
+                                sendQuote(event, "没有相似度较高的图片");
+                                return;
                             }
+                            MessageChainBuilder messageChainBuilder = new MessageChainBuilder();
+                            SauceNaoApi.SauceNaoResult.Result tmpr = mResults.getResults().get(0);
+                            String[] titleAndMetadata = tmpr.mTitle.split("\n", 2);
+                            if (titleAndMetadata.length > 0) {
+                                messageChainBuilder.append(titleAndMetadata[0]).append("\n");
+                                if (titleAndMetadata.length == 2) {
+                                    tmpr.mColumns.add(0, titleAndMetadata[1]);
+                                }
+                                for (String string : tmpr.mColumns) {
+                                    messageChainBuilder.append(string).append("\n");
+                                }
+                            }
+                            String imgUrl = tmpr.mThumbnail;
+                            if (tmpr.mExtUrls.size() == 2) {
+                                String extUrl = tmpr.mExtUrls.get(1);
+                                if (extUrl.contains("pixiv")) {
+                                    imgUrl = "https://www.pixiv.cat/" + extUrl.substring(extUrl.indexOf("=") + 1) + ".png";
+                                }
+                                messageChainBuilder.append("图片&画师:").append(extUrl).append("\n");
+                                messageChainBuilder.append(tmpr.mExtUrls.get(0)).append("\n");
+                            } else if (tmpr.mExtUrls.size() == 1) {
+                                String extUrl = tmpr.mExtUrls.get(0);
+                                if (extUrl.contains("pixiv")) {
+                                    imgUrl = "https://www.pixiv.cat/" + extUrl.substring(extUrl.indexOf("=") + 1) + ".png";
+                                }
+                                messageChainBuilder.append("链接:").append(tmpr.mExtUrls.get(0)).append("\n");
+                            }
+                            if (!tmpr.mSimilarity.isEmpty()) {
+                                messageChainBuilder.append("相似度:").append(tmpr.mSimilarity).append("\n");
+                            }
+                            URL url1 = new URL(imgUrl);
+                            Image element = botWrapper.toImage(url1, event.getGroup());
+                            messageChainBuilder.add(element);
+                            sendMessage(event.getGroup(), messageChainBuilder.asMessageChain());
+                        } catch (IOException e) {
+                            ExceptionCatcher.getInstance().uncaughtException(Thread.currentThread(), e);
+                            sendMessage(event, e.toString());
                         }
                     });
 
-                    put(SecondaryCommand.getImageUrl, new BiConsumer<Image, GroupMessageEvent>() {
-
-                        @Override
-                        public void accept(Image img, GroupMessageEvent event) {
-                            sendMessage(event, botWrapper.getUrl(img));
-                        }
-                    });
+                    put(SecondaryCommand.getImageUrl, (img, event) -> sendMessage(event, botWrapper.getUrl(img)));
 
                 }
             });
@@ -205,112 +189,26 @@ public class ImageProcess extends BaseModule implements IGroupMessageEvent {
         private final Map<SecondaryCommand, BiFunction<BufferedImage, String, BufferedImage>> bifunctions;
 
         private ImageTransaction() {
-            functions = Collections.unmodifiableMap(new HashMap<SecondaryCommand, Function<BufferedImage, BufferedImage>>() {
+            functions = Collections.unmodifiableMap(new HashMap<>() {
                 {
-                    put(SecondaryCommand.imageToGray, new Function<BufferedImage, BufferedImage>() {
-
-                        @Override
-                        public BufferedImage apply(BufferedImage p1) {
-                            return ImageFactory.getInstance().generateGray(p1);
-                        }
-                    });
-                    put(SecondaryCommand.imageRotate, new Function<BufferedImage, BufferedImage>() {
-
-                        @Override
-                        public BufferedImage apply(BufferedImage p1) {
-                            return ImageFactory.getInstance().generateRotateImage(p1, 90);
-                        }
-                    });
-                    put(SecondaryCommand.imageUpsideDown, new Function<BufferedImage, BufferedImage>() {
-
-                        @Override
-                        public BufferedImage apply(BufferedImage p1) {
-                            return ImageFactory.getInstance().generateMirror(p1, 1);
-                        }
-                    });
-                    put(SecondaryCommand.imageFlip, new Function<BufferedImage, BufferedImage>() {
-
-                        @Override
-                        public BufferedImage apply(BufferedImage p1) {
-                            return ImageFactory.getInstance().generateMirror(p1, 0);
-                        }
-                    });
-                    put(SecondaryCommand.imageUpSeija, new Function<BufferedImage, BufferedImage>() {
-
-                        @Override
-                        public BufferedImage apply(BufferedImage p1) {
-                            return ImageFactory.getInstance().generateMirror(p1, 2);
-                        }
-                    });
-                    put(SecondaryCommand.expression_jingShenZhiZhu, new Function<BufferedImage, BufferedImage>() {
-                        @Override
-                        public BufferedImage apply(BufferedImage p1) {
-                            return ImageFactory.getInstance().generateJingShenZhiZhu(p1);
-                        }
-                    });
-                    put(SecondaryCommand.expression_shenChu, new Function<BufferedImage, BufferedImage>() {
-
-                        @Override
-                        public BufferedImage apply(BufferedImage p1) {
-                            return ImageFactory.getInstance().generateShenChu(p1);
-                        }
-                    });
-                    put(SecondaryCommand.expression_xiaoHuaJia, new Function<BufferedImage, BufferedImage>() {
-
-                        @Override
-                        public BufferedImage apply(BufferedImage p1) {
-                            return ImageFactory.getInstance().generateXiaoHuaJia(p1);
-                        }
-                    });
-                    put(SecondaryCommand.expression_JiXuGanHuo, new Function<BufferedImage, BufferedImage>() {
-
-                        @Override
-                        public BufferedImage apply(BufferedImage p1) {
-                            return ImageFactory.getInstance().generateJiXuGanHuo(p1);
-                        }
-                    });
-                    put(SecondaryCommand.expression_BuKeYiJianMian, new Function<BufferedImage, BufferedImage>() {
-
-                        @Override
-                        public BufferedImage apply(BufferedImage p1) {
-                            return ImageFactory.getInstance().generateBuKeYiJianMian(p1);
-                        }
-                    });
-                    put(SecondaryCommand.expression_ZaiXiang, new Function<BufferedImage, BufferedImage>() {
-
-                        @Override
-                        public BufferedImage apply(BufferedImage p1) {
-                            return ImageFactory.getInstance().generateZaiXiang(p1);
-                        }
-                    });
-                    put(SecondaryCommand.expression_BaoJin, new Function<BufferedImage, BufferedImage>() {
-
-                        @Override
-                        public BufferedImage apply(BufferedImage p1) {
-                            return ImageFactory.getInstance().generateBaojin(p1);
-                        }
-                    });
+                    put(SecondaryCommand.imageToGray, p1 -> ImageFactory.getInstance().generateGray(p1));
+                    put(SecondaryCommand.imageRotate, p1 -> ImageFactory.getInstance().generateRotateImage(p1, 90));
+                    put(SecondaryCommand.imageUpsideDown, p1 -> ImageFactory.getInstance().generateMirror(p1, 1));
+                    put(SecondaryCommand.imageFlip, p1 -> ImageFactory.getInstance().generateMirror(p1, 0));
+                    put(SecondaryCommand.imageUpSeija, p1 -> ImageFactory.getInstance().generateMirror(p1, 2));
+                    put(SecondaryCommand.expression_jingShenZhiZhu, p1 -> ImageFactory.getInstance().generateJingShenZhiZhu(p1));
+                    put(SecondaryCommand.expression_shenChu, p1 -> ImageFactory.getInstance().generateShenChu(p1));
+                    put(SecondaryCommand.expression_xiaoHuaJia, p1 -> ImageFactory.getInstance().generateXiaoHuaJia(p1));
+                    put(SecondaryCommand.expression_JiXuGanHuo, p1 -> ImageFactory.getInstance().generateJiXuGanHuo(p1));
+                    put(SecondaryCommand.expression_BuKeYiJianMian, p1 -> ImageFactory.getInstance().generateBuKeYiJianMian(p1));
+                    put(SecondaryCommand.expression_ZaiXiang, p1 -> ImageFactory.getInstance().generateZaiXiang(p1));
+                    put(SecondaryCommand.expression_BaoJin, p1 -> ImageFactory.getInstance().generateBaojin(p1));
                 }
             });
-            bifunctions = Collections.unmodifiableMap(new HashMap<SecondaryCommand, BiFunction<BufferedImage, String, BufferedImage>>() {{
-                put(SecondaryCommand.expression_WoYongYuanXiHuan, new BiFunction<BufferedImage, String, BufferedImage>() {
-                    @Override
-                    public BufferedImage apply(BufferedImage bufferedImage, String s) {
-                        return ImageFactory.getInstance().generateWoYongYuanXiHuan(bufferedImage, s);
-                    }
-                });
-                put(SecondaryCommand.expression_FaDian, new BiFunction<BufferedImage, String, BufferedImage>() {
-                    @Override
-                    public BufferedImage apply(BufferedImage bufferedImage, String s) {
-                        return ImageFactory.getInstance().generateFaDian(bufferedImage, s);
-                    }
-                });
-                put(SecondaryCommand.expression_Pa, new BiFunction<BufferedImage, String, BufferedImage>() {
-                    @Override
-                    public BufferedImage apply(BufferedImage bufferedImage, String s) {
-                        return ImageFactory.getInstance().generatePa(bufferedImage, s);
-                    }
-                });
+            bifunctions = Collections.unmodifiableMap(new HashMap<>() {{
+                put(SecondaryCommand.expression_WoYongYuanXiHuan, (bufferedImage, s) -> ImageFactory.getInstance().generateWoYongYuanXiHuan(bufferedImage, s));
+                put(SecondaryCommand.expression_FaDian, (bufferedImage, s) -> ImageFactory.getInstance().generateFaDian(bufferedImage, s));
+                put(SecondaryCommand.expression_Pa, (bufferedImage, s) -> ImageFactory.getInstance().generatePa(bufferedImage, s));
             }});
         }
 
@@ -466,30 +364,4 @@ public class ImageProcess extends BaseModule implements IGroupMessageEvent {
         return miraiImg;
     }
 
-    private String switchTagName(String s) {
-        switch (s) {
-            case "normal":
-                return "普通";
-            case "hot":
-                return "性感";
-            case "porn":
-                return "色情";
-            case "female-genital":
-                return "女性阴部";
-            case "female-breast":
-                return "女性胸部";
-            case "male-genital":
-                return "男性阴部";
-            case "pubes":
-                return "阴毛";
-            case "anus":
-                return "肛门";
-            case "sex":
-                return "性行为";
-            case "normal_hot_porn":
-                return "色情综合值";
-            default:
-                return null;
-        }
-    }
 }

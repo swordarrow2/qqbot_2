@@ -14,6 +14,7 @@ import com.meng.bot.qq.handler.group.INudgeEvent;
 import com.meng.tools.normal.ExceptionCatcher;
 import com.meng.tools.sjf.SJFPathTool;
 import com.meng.tools.sjf.SJFRandom;
+
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
@@ -25,6 +26,7 @@ import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
+
 import net.mamoe.mirai.contact.Contact;
 import net.mamoe.mirai.contact.Group;
 import net.mamoe.mirai.contact.MemberPermission;
@@ -70,14 +72,9 @@ public class WordsStock extends BaseModule implements IGroupMessageEvent, INudge
                 ArrayList<WordsItem> list = dictionary.words.get(mapEntry.getKey());
                 final GoodwillLevel gl = GoodwillLevel.getLevel(UserInfoManager.getInstance().getCoins(qq));
 
-                WordsItem wordItem = SJFRandom.randomSelect(new ArrayList<WordsItem>(list) {{
-                            removeIf(new Predicate<WordsItem>() {
-                                    @Override
-                                    public boolean test(WordsItem entry1) {
-                                        return !goodwillMatch(entry1, gl);
-                                    }
-                                });
-                        }});
+                WordsItem wordItem = SJFRandom.randomSelect(new ArrayList<>(list) {{
+                    removeIf(entry1 -> !goodwillMatch(entry1, gl));
+                }});
                 if (wordItem.probability != 100) {
                     if (SJFRandom.randomInt(100) > wordItem.probability) {
                         return false;
@@ -199,6 +196,9 @@ public class WordsStock extends BaseModule implements IGroupMessageEvent, INudge
                                 break;
                         }
                     } catch (Exception e) {
+                        if (botWrapper.debug) {
+                            e.printStackTrace();
+                        }
                         ExceptionCatcher.getInstance().uncaughtException(Thread.currentThread(), e);
                     }
                 }
@@ -222,11 +222,11 @@ public class WordsStock extends BaseModule implements IGroupMessageEvent, INudge
         }
         if (dictionary.words.containsKey("onNudge")) {
             GroupMessageEvent groupMessageEvent =
-                new GroupMessageEvent(
-                event.getFrom().getNick(),
-                MemberPermission.MEMBER, botWrapper.getGroupMember(event.getSubject().getId(), event.getFrom().getId()),
-                new MessageChainBuilder().asMessageChain().plus("onNudge"),
-                (int) (System.currentTimeMillis() / 1000));
+                    new GroupMessageEvent(
+                            event.getFrom().getNick(),
+                            MemberPermission.MEMBER, botWrapper.getGroupMember(event.getSubject().getId(), event.getFrom().getId()),
+                            new MessageChainBuilder().asMessageChain().plus("onNudge"),
+                            (int) (System.currentTimeMillis() / 1000));
             onGroupMessage(groupMessageEvent);
             return true;
         }
@@ -240,8 +240,8 @@ public class WordsStock extends BaseModule implements IGroupMessageEvent, INudge
                 e.printStackTrace();
             }
         } else if (flag > 2 && flag < 11) {
-            String[] nu = new String[] {"你群日常乱戳∠( ᐛ 」∠)_", "_(•̀ω•́ 」∠)_", "_(:３っ　)へ杰哥你又在戳哦", "(눈‸눈)你这戳一戳包熟吗", " (⊙o⊙)我家房子还蛮大的,可以好好戳",
-                "别戳啦、( ´◔‸◔`)","戳一戳计数:114514","戳一戳计数:1919810"};
+            String[] nu = new String[]{"你群日常乱戳∠( ᐛ 」∠)_", "_(•̀ω•́ 」∠)_", "_(:３っ　)へ杰哥你又在戳哦", "(눈‸눈)你这戳一戳包熟吗", " (⊙o⊙)我家房子还蛮大的,可以好好戳",
+                    "别戳啦、( ´◔‸◔`)", "戳一戳计数:114514", "戳一戳计数:1919810"};
             sendGroupMessage(event.getSubject().getId(), nu[flag - 3]);
         } else if (flag == 11) {
             sendGroupMessage(event.getSubject().getId(), "戳回去 ⸜(๑'ᵕ'๑)⸝⋆*");
@@ -252,12 +252,12 @@ public class WordsStock extends BaseModule implements IGroupMessageEvent, INudge
             if (folder.exists()) {
                 Contact subject = event.getSubject();
                 if (subject instanceof Group) {
-                    Group group = (Group)subject;
+                    Group group = (Group) subject;
                     Audio audio = botWrapper.toAudio(SJFRandom.randomSelect(folder.listFiles()), group);
                     sendMessage(group, audio);
                 }
             }
-        } 
+        }
         return false;
     }
 

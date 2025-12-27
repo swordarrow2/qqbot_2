@@ -13,6 +13,7 @@ import com.meng.tools.normal.FfmpegCmdBuilder;
 import com.meng.tools.sjf.SJFPathTool;
 import com.meng.tools.sjf.SJFRandom;
 import com.meng.tools.normal.TextLexer;
+
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FilenameFilter;
@@ -22,31 +23,23 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Iterator;
+
 import net.mamoe.mirai.event.events.GroupMessageEvent;
 import org.jaudiotagger.audio.AudioFileIO;
 
 public class MusicRecongnition extends BaseModule implements IGroupMessageEvent {
 
     public static String musicFolder = "C://thbgm/";
-    private ArrayList<String> musicNames = new ArrayList<>();
-    private File[] gameFolders = new File(musicFolder).listFiles(new FileFilter() {
-
-            @Override
-            public boolean accept(File p1) {
-                return p1.isDirectory() && p1.getName().startsWith("th");
-            }
-        });
+    private final ArrayList<String> musicNames = new ArrayList<>();
+    private final File[] gameFolders = new File(musicFolder).listFiles(p1 -> p1.isDirectory() && p1.getName().startsWith("th"));
 
     public MusicRecongnition(BotWrapper botHelper) {
         super(botHelper);
         for (File gameFolder : gameFolders) {
-            Collections.addAll(musicNames, gameFolder.list(new FilenameFilter() {
-
-                                       @Override
-                                       public boolean accept(File p1, String p2) {
-                                           return p2.endsWith(".mp3");
-                                       }
-                                   }));
+            String[] list = gameFolder.list((p1, p2) -> p2.endsWith(".mp3"));
+            if (list != null) {
+                Collections.addAll(musicNames, list);
+            }
         }
     }
 
@@ -86,13 +79,11 @@ public class MusicRecongnition extends BaseModule implements IGroupMessageEvent 
             }
 
             File gameFolder = SJFRandom.randomSelect(gameFolders);
-            File[] musics = gameFolder.listFiles(new FileFilter() {
-
-                    @Override
-                    public boolean accept(File p1) {
-                        return p1.getName().endsWith(".mp3");
-                    }
-                });
+            File[] musics = gameFolder.listFiles(p1 -> p1.getName().endsWith(".mp3"));
+            if (musics == null) {
+                sendQuote(event, "暂未添加相关内容");
+                return true;
+            }
             File input = SJFRandom.randomSelect(musics);
             try {
                 sendMessage(event, botWrapper.toAudio(generalCut(input, SJFPathTool.getMusicCutPath(System.currentTimeMillis() + "1.wav"), needSeconds), event.getGroup()));
@@ -139,11 +130,15 @@ public class MusicRecongnition extends BaseModule implements IGroupMessageEvent 
         builder.bitrate(64).freq(22050).channels(1).select("00:" + fmt.format(start), "00:" + fmt.format(end));
         String cmd = builder.build();
         try (CmdExecuter execute = CmdExecuter.execute(cmd, null)) {
-            if (execute.getProcess().exitValue() == 0) {
+            Process process = execute.getProcess();
+            if (process != null && process.exitValue() == 0) {
                 return output;
-            } else {
-                return null;
+            }
+        } catch (NullPointerException e) {
+            if (botWrapper.debug) {
+                e.printStackTrace();
             }
         }
+        return null;
     }
 }

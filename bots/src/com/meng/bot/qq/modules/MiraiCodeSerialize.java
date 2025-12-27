@@ -36,7 +36,7 @@ public class MiraiCodeSerialize extends BaseModule implements IGroupMessageEvent
             ready.remove(qq);
             return true;
         } else if (msg.startsWith("ttm")) {
-            sendMessage(event.getGroup(), MiraiCode.deserializeMiraiCode(event.getMessage().get(1).toString().substring(6)));
+            sendMessage(event.getGroup(), MiraiCode.deserializeMiraiCode(event.getMessage().get(1).toString().substring(4)));
             return true;
         }
         return false;

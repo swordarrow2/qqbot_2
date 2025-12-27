@@ -127,13 +127,7 @@ public class ReflexCommand extends BaseModule implements IGroupMessageEvent {
             final Class<?> type = signature.argTypes[i];
             Function<String, Object> function = parser.get(type);
             if (function == null) {
-                function = new Function<String, Object>() {
-
-                    @Override
-                    public Object apply(String p1) {
-                        return JSON.fromJson(p1, type);
-                    }
-                };
+                function = p1 -> JSON.fromJson(p1, type);
             }
             args[i] = function.apply(cmds.get(i + 3));
         }

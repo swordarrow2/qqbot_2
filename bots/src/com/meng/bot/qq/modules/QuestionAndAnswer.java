@@ -191,36 +191,19 @@ public class QuestionAndAnswer extends BaseModule implements IGroupMessageEvent 
         StringBuilder sb = new StringBuilder();
         sb.append("以下符卡在");
         switch (diff) {
-            case THSpell.Easy:
-                sb.append("easy难度");
-                break;
-            case THSpell.Normal:
-                sb.append("normal难度");
-                break;
-            case THSpell.Hard:
-                sb.append("hard难度");
-                break;
-            case THSpell.Lunatic:
-                sb.append("lunatic难度");
-                break;
-            case THSpell.Overdrive:
-                sb.append("overdrive难度");
-                break;
-            case THSpell.LastSpell:
-                sb.append("last spell");
-                break;
-            case THSpell.LastWord:
-                sb.append("lastword");
-                break;
-            case THSpell.Extra:
-                sb.append("extra关卡");
-                break;
-            case THSpell.Phantasm:
-                sb.append("phamtasm关卡");
-                break;
-            default:
+            case THSpell.Easy -> sb.append("easy难度");
+            case THSpell.Normal -> sb.append("normal难度");
+            case THSpell.Hard -> sb.append("hard难度");
+            case THSpell.Lunatic -> sb.append("lunatic难度");
+            case THSpell.Overdrive -> sb.append("overdrive难度");
+            case THSpell.LastSpell -> sb.append("last spell");
+            case THSpell.LastWord -> sb.append("lastword");
+            case THSpell.Extra -> sb.append("extra关卡");
+            case THSpell.Phantasm -> sb.append("phamtasm关卡");
+            default -> {
                 System.out.println(tHSpell.cnName);
                 System.out.println(diff);
+            }
         }
         sb.append("中出现的是:\n");
         qa.question = sb.toString();

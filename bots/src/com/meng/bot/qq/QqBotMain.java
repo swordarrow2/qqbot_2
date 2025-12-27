@@ -1,10 +1,7 @@
 package com.meng.bot.qq;
 
+import com.google.gson.annotations.SerializedName;
 import com.meng.bot.config.ConfigManager;
-
-import java.io.File;
-import java.util.*;
-
 import com.meng.tools.normal.FileTool;
 import com.meng.tools.normal.JSON;
 import com.meng.tools.normal.TimeTask;
@@ -12,10 +9,14 @@ import com.meng.tools.sjf.SJFExecutors;
 import com.meng.tools.sjf.SJFPathTool;
 import kotlin.sequences.Sequence;
 import net.mamoe.mirai.Bot;
-import com.google.gson.annotations.SerializedName;
 import top.mrxiaom.overflow.BotBuilder;
 
+import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.NoSuchElementException;
 
 public class QqBotMain {
 
@@ -74,19 +75,9 @@ public class QqBotMain {
         bot.login();
 
         botWrappers.put(bot, botHelper);
-        SJFExecutors.execute(new Runnable() {
-            @Override
-            public void run() {
-                bot.join();
-            }
-        });
+        SJFExecutors.execute(() -> bot.join());
 
-        TimeTask.getInstance().addTask(0, 0, new Runnable() {
-            @Override
-            public void run() {
-                FileTool.deleteFiles(SJFPathTool.getTempPath(""));
-            }
-        });
+        TimeTask.getInstance().addTask(0, 0, () -> FileTool.deleteFiles(SJFPathTool.getTempPath("")));
         isLoaded = true;
 
         //        SJFExecutors.executeAfterTime(new Runnable(){

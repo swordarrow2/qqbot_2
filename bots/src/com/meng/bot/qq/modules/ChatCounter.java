@@ -1,24 +1,24 @@
 package com.meng.bot.qq.modules;
 
+import com.meng.bot.config.Person;
 import com.meng.bot.qq.BaseModule;
 import com.meng.bot.qq.BotWrapper;
 import com.meng.bot.qq.command.Command;
 import com.meng.bot.qq.handler.group.IGroupMessageEvent;
 import com.meng.bot.qq.handler.group.INudgeEvent;
 import com.meng.tools.sjf.SJFPathTool;
+
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
 import net.mamoe.mirai.contact.NormalMember;
+import net.mamoe.mirai.contact.Stranger;
 import net.mamoe.mirai.event.events.GroupMessageEvent;
 import net.mamoe.mirai.event.events.NudgeEvent;
 import net.mamoe.mirai.message.data.MessageChain;
@@ -78,32 +78,26 @@ public class ChatCounter extends BaseModule implements IGroupMessageEvent, INudg
         stringBuilder.append("\n总发言数:").append(groupInfo.groupCount.sentence);
         ArrayList<Map.Entry<Long, CountBean>> list = new ArrayList<>(groupInfo.hashMap.entrySet());
 
-        list.sort(new Comparator<Map.Entry<Long, CountBean>>() {
-                @Override
-                public int compare(Map.Entry<Long, CountBean> o1, Map.Entry<Long, CountBean> o2) {
-                    if (Objects.equals(o1.getValue().sentence, o2.getValue().sentence)) {
-                        return 0;
-                    }
-                    return o1.getValue().sentence > o2.getValue().sentence ? -1 : 1;
-                }
-            });
+        list.sort((o1, o2) -> {
+            if (Objects.equals(o1.getValue().sentence, o2.getValue().sentence)) {
+                return 0;
+            }
+            return o1.getValue().sentence > o2.getValue().sentence ? -1 : 1;
+        });
         int countSentence = Math.min(list.size(), 10);
         for (int i = 0; i < countSentence; i++) {
             Map.Entry<Long, CountBean> obj = list.get(i);
             Long qq = obj.getKey();
-            NormalMember member = botWrapper.getGroupMember(gid, qq);
-            stringBuilder.append("\nNo.").append(i + 1).append(":").append(member.getNick())
-                .append("(").append(qq).append(")").append("-").append(obj.getValue().sentence).append("条");
+
+            stringBuilder.append("\nNo.").append(i + 1).append(":").append(configManager.getNickName(gid, qq))
+                    .append("(").append(qq).append(")").append("-").append(obj.getValue().sentence).append("条");
         }
-        list.sort(new Comparator<Map.Entry<Long, CountBean>>() {
-                @Override
-                public int compare(Map.Entry<Long, CountBean> o1, Map.Entry<Long, CountBean> o2) {
-                    if (Objects.equals(o1.getValue().nudge, o2.getValue().nudge)) {
-                        return 0;
-                    }
-                    return o1.getValue().nudge > o2.getValue().nudge ? -1 : 1;
-                }
-            });
+        list.sort((o1, o2) -> {
+            if (Objects.equals(o1.getValue().nudge, o2.getValue().nudge)) {
+                return 0;
+            }
+            return o1.getValue().nudge > o2.getValue().nudge ? -1 : 1;
+        });
         stringBuilder.append("\n总戳一戳:").append(groupInfo.groupCount.nudge);
         int countNudge = Math.min(list.size(), 5);
         for (int i = 0; i < countNudge; i++) {
@@ -111,7 +105,7 @@ public class ChatCounter extends BaseModule implements IGroupMessageEvent, INudg
             Long qq = obj.getKey();
             NormalMember member = botWrapper.getGroupMember(gid, qq);
             stringBuilder.append("\nNo.").append(i + 1).append(":").append(member.getNick())
-                .append("(").append(qq).append(")").append("-").append(obj.getValue().nudge).append("次");
+                    .append("(").append(qq).append(")").append("-").append(obj.getValue().nudge).append("次");
         }
         return stringBuilder.toString();
     }
@@ -120,7 +114,7 @@ public class ChatCounter extends BaseModule implements IGroupMessageEvent, INudg
         super(botHelper);
         try {
             Class.forName(Drivde);// 加载驱动,连接sqlite的jdbc
-            connection = DriverManager.getConnection("jdbc:sqlite:" + SJFPathTool.getAppDirectory() +  botWrapper.getId() + "groupRecord.db");//连接数据库,不存在则创建
+            connection = DriverManager.getConnection("jdbc:sqlite:" + SJFPathTool.getAppDirectory() + botWrapper.getId() + "groupRecord.db");//连接数据库,不存在则创建
         } catch (ClassNotFoundException | SQLException e) {
             e.printStackTrace();
         }
@@ -150,9 +144,9 @@ public class ChatCounter extends BaseModule implements IGroupMessageEvent, INudg
         try {
             Statement statement = connection.createStatement();
             statement.execute(String.format("insert into g%d values(null,%d,%d,'%s')",
-                                            event.getSubject().getId(),
-                                            System.currentTimeMillis(),
-                                            event.getFrom().getId(), event.toString()));
+                    event.getSubject().getId(),
+                    System.currentTimeMillis(),
+                    event.getFrom().getId(), event.toString()));
         } catch (SQLException e) {
             e.printStackTrace();
         }

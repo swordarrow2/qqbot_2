@@ -10,7 +10,7 @@ public enum Permission {
 
     private int v;
 
-    private Permission(int i) {
+    Permission(int i) {
         v = i;
     }
 

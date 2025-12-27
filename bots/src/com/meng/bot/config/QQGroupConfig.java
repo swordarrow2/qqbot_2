@@ -11,9 +11,6 @@ public class QQGroupConfig {
     public HashSet<String> tags = new HashSet<>();
 
     public void init() {
-//        enabled.remove(Functions.GroupMessageEvent);
-//        enabled.remove(Functions.DynamicWordStock);
-//        enabled.remove(Functions.MessageRecallEvent_GroupRecall);
     }
 
     public QQGroupConfig() {

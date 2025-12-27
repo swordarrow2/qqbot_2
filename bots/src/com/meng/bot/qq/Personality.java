@@ -56,7 +56,7 @@ public enum Personality {
     };
 
 
-    private Personality(Tag tag) {
+    Personality(Tag tag) {
         this.tag = tag;
     }
 

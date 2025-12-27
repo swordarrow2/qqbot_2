@@ -1,7 +1,9 @@
 package com.meng.bot.qq;
 
 import com.meng.bot.annotation.CommandDescribe;
-import com.meng.bot.config.*;
+import com.meng.bot.config.ConfigManager;
+import com.meng.bot.config.Functions;
+import com.meng.bot.config.Person;
 import com.meng.bot.qq.commonModules.UserInfoManager;
 import com.meng.bot.qq.handler.friend.IFriendChangeEvent;
 import com.meng.bot.qq.handler.friend.IFriendEvent;

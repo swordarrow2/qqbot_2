@@ -54,7 +54,7 @@ public class CoinsManager extends BaseModule implements IGroupMessageEvent {
                 return false;
             }
             switch (command) {
-                case sign:
+                case sign -> {
                     if (UserInfoManager.getInstance().onSign(qqId)) {
                         int day = uf.getContinuousSignedDays(qqId);
                         String result = String.format("签到成功,获得%d个硬币(基础:10,连续签到:%d)", 10 + day, day);
@@ -63,10 +63,12 @@ public class CoinsManager extends BaseModule implements IGroupMessageEvent {
                         sendMessage(event.getGroup(), "你今天已经签到过啦");
                     }
                     return true;
-                case getCoins:
+                }
+                case getCoins -> {
                     sendMessage(event, "你一共拥有" + uf.getCoins(qqId) + "个硬币");
                     return true;
-                case addCoins:
+                }
+                case addCoins -> {
                     Person p = configManager.getPersonFromQQ(qqId);
                     if (p == null) {
                         return false;
@@ -97,6 +99,7 @@ public class CoinsManager extends BaseModule implements IGroupMessageEvent {
                     UserInfoManager.getInstance().addCoins(target, count);
                     sendMessage(event, "已为" + target + "添加了" + count + "个硬币");
                     return true;
+                }
             }
             return true;
         } catch (Exception e) {
