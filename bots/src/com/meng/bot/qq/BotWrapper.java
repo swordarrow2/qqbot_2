@@ -46,6 +46,10 @@ public class BotWrapper {
         return bot;
     }
 
+    public Stranger getStranger(long qq) {
+        return bot.getStranger(qq);
+    }
+
     public void setBotMessageHandler(BotMessageHandler botMessageHandler) {
         this.botMessageHandler = botMessageHandler;
     }
@@ -69,22 +73,15 @@ public class BotWrapper {
     public ConfigManager getConfigManager() {
         return configManager;
     }
-//    public String findQQInAllGroup(long group, long findQQ) {
-//        Set<Group> groups=findQQInAllGroup(findQQ);
-//        StringBuilder stringBuilder = new StringBuilder();
-//        stringBuilder.append(findQQ).append("在这些群中出现");
-//        for (Group l : groups) {
-//            stringBuilder.append("\n").append(l.getId()).append(l.getName());
-//        }
-//        return stringBuilder.toString();
-//    }
 
-    public boolean isLeftThanMe(long id) {
-        return QqBotMain.getAccountList().indexOf(id) < QqBotMain.getAccountList().indexOf(bot.getId());
-    }
-
-    public boolean isOneHolder(long id) {
-        return QqBotMain.getAccountList().contains(id);
+    public String findQQInAllGroup(long group, long findQQ) {
+        Set<Group> groups = findQQInAllGroup(findQQ);
+        StringBuilder stringBuilder = new StringBuilder();
+        stringBuilder.append(findQQ).append("共同群：");
+        for (Group l : groups) {
+            stringBuilder.append("\n").append(l.getId()).append(l.getName());
+        }
+        return stringBuilder.toString();
     }
 
     public Set<Group> findQQInAllGroup(long findQQ) {
@@ -142,28 +139,27 @@ public class BotWrapper {
         return ExternalResource.Companion.uploadAsImage(inputStream, contact);
     }
 
-    public byte[] getAvatar(long qq) throws IOException {
-        return Network.httpGetRaw("http://q2.qlogo.cn/headimg_dl?dst_uin=" + qq + "&spec=3");
-    }
-
-    public byte[] getAvatar(Contact contact) throws IOException {
-        String avatarUrl = contact.getAvatarUrl();
-        System.out.println(avatarUrl);
-        if (contact instanceof User) {
-            avatarUrl = "http://q2.qlogo.cn/headimg_dl?dst_uin=" + contact.getId() + "&spec=3";
-        }
-        return Network.httpGetRaw(avatarUrl);
-    }
-
     public File getAvatarFile(ContactOrBot contact) throws IOException {
         String avatarUrl = contact.getAvatarUrl();
         if (contact instanceof User) {
-            avatarUrl = "http://q2.qlogo.cn/headimg_dl?dst_uin=" + contact.getId() + "&spec=3";
+            int[] specs = {5, 4, 3};
+            byte[] bytes;
+            for (int spec : specs) {
+                avatarUrl = "http://q2.qlogo.cn/headimg_dl?dst_uin=" + contact.getId() + "&spec=" + spec;
+                bytes = Network.httpGetRaw(avatarUrl);
+                if (bytes != null && bytes.length > 4096) {
+                    File file = SJFPathTool.getAvatarPath(contact.getId() + ".png");
+                    FileTool.saveFile(file, bytes);
+                    return file;
+                }
+            }
+            throw new IOException("Failed to get avatar after trying all spec parameters for user: " + contact.getId());
+        } else {
+            byte[] bytes = Network.httpGetRaw(avatarUrl);
+            File file = SJFPathTool.getAvatarPath(contact.getId() + ".png");
+            FileTool.saveFile(file, bytes);
+            return file;
         }
-        byte[] bytes = Network.httpGetRaw(avatarUrl);
-        File file = SJFPathTool.getAvatarPath(contact.getId() + ".png");
-        FileTool.saveFile(file, bytes);
-        return file;
     }
 
     public Audio toAudio(File file, Group group) {
@@ -191,11 +187,11 @@ public class BotWrapper {
     }
 
     public NormalMember getGroupMember(long gid, long qq) {
-        return bot.getGroup(gid).getOrFail(qq);
+        return bot.getGroup(gid).get(qq);
     }
 
     public NormalMember getGroupMember(GroupMessageEvent event) {
-        return bot.getGroup(event.getGroup().getId()).getOrFail(event.getSender().getId());
+        return bot.getGroup(event.getGroup().getId()).get(event.getSender().getId());
     }
 
     public boolean isAtme(MessageChain messageChain) {

@@ -46,9 +46,6 @@ public class AdminMessage extends BaseModule implements IGroupMessageEvent {
     public boolean onGroupMessage(GroupMessageEvent event) {
         long qq = event.getSender().getId();
         long groupId = event.getGroup().getId();
-        if (qq == 2856986197L) {
-            int i = 0;
-        }
         String msg = event.getMessage().contentToString();
         if (msg.charAt(0) != '.') {
             return false;
@@ -67,8 +64,13 @@ public class AdminMessage extends BaseModule implements IGroupMessageEvent {
             //      if (person == null) {
             //          return false;
             //      }
+            if (command == Command.help) {
+                sendMessage(event.getGroup(), moduleManager.getFunction());
+                return true;
+            }
             if (!configManager.getPersonFromQQ(qq).hasAdminPermission() && botWrapper.getGroupMember(groupId, qq).getPermission().getLevel() == 0) {
-                throw new SJFPermissionDeniedException(event);
+//                throw new SJFPermissionDeniedException(event);
+                return false;
             }
             QuoteReply quoteReply = event.getMessage().get(QuoteReply.Key);
             if (quoteReply != null) {
@@ -185,11 +187,13 @@ public class AdminMessage extends BaseModule implements IGroupMessageEvent {
             //below bot admin or group master forbid
 
             if (!configManager.getPersonFromQQ(qq).hasAdminPermission() && botWrapper.getGroupMember(groupId, qq).getPermission().getLevel() != 2) {
-                throw new SJFPermissionDeniedException(event);
+//                throw new SJFPermissionDeniedException(event);
+                return false;
             }
             //below bot master forbid
             if (!configManager.getPersonFromQQ(qq).hasMasterPermission()) {
-                throw new SJFPermissionDeniedException(event);
+//                throw new SJFPermissionDeniedException(event);
+                return false;
             }
             switch (command) {
                 case broadcastInBotGroups -> {
@@ -271,69 +275,62 @@ public class AdminMessage extends BaseModule implements IGroupMessageEvent {
                     return true;
                 }
                 case blockUser -> {
-                    {
-                        StringBuilder sb = new StringBuilder("屏蔽列表添加:");
-                        while (iter.hasNext()) {
-                            String nextqq = iter.next();
-                            configManager.addBlackQQ(Long.parseLong(nextqq));
-                            sb.append(nextqq).append(" ");
-                            configManager.save();
-                        }
-                        sendGroupMessage(groupId, sb.toString());
+                    StringBuilder sb = new StringBuilder("屏蔽列表添加:");
+                    while (iter.hasNext()) {
+                        String nextqq = iter.next();
+                        configManager.addBlackQQ(Long.parseLong(nextqq));
+                        sb.append(nextqq).append(" ");
+                        configManager.save();
                     }
+                    sendGroupMessage(groupId, sb.toString());
                     return true;
                 }
                 case blackUser -> {
-                    {
-                        StringBuilder sb = new StringBuilder("屏蔽列表添加:");
-                        while (iter.hasNext()) {
-                            String nextqq = iter.next();
-                            configManager.addBlackQQ(Long.parseLong(nextqq));
-                            sb.append(nextqq).append(" ");
-                        }
-                        configManager.save();
-                        sendGroupMessage(groupId, sb.toString());
+                    StringBuilder sb = new StringBuilder("屏蔽列表添加:");
+                    while (iter.hasNext()) {
+                        String nextqq = iter.next();
+                        configManager.addBlackQQ(Long.parseLong(nextqq));
+                        sb.append(nextqq).append(" ");
                     }
+                    configManager.save();
+                    sendGroupMessage(groupId, sb.toString());
                     return true;
                 }
                 case kickUserFromGroup -> {
-                    {
-                        long target = botWrapper.getAt(event.getMessage());
-                        if (target == -1) {
-                            target = Long.parseLong(iter.next());
-                        }
-                        NormalMember targetMember = botWrapper.getGroupMember(groupId, target);
-                        if (targetMember == null) {
-                            sendGroupMessage(groupId, "未找到该成员:" + target);
-                            return true;
-                        }
-                        if (iter.hasNext()) {
-                            targetMember.kick(iter.next());
-                        } else {
-                            targetMember.kick("");
-                        }
+                    long target = botWrapper.getAt(event.getMessage());
+                    if (target == -1) {
+                        target = Long.parseLong(iter.next());
+                    }
+                    NormalMember targetMember = botWrapper.getGroupMember(groupId, target);
+                    if (targetMember == null) {
+                        sendGroupMessage(groupId, "未找到该成员:" + target);
+                        return true;
+                    }
+                    if (iter.hasNext()) {
+                        targetMember.kick(iter.next());
+                    } else {
+                        targetMember.kick("");
                     }
                     return true;
                 }
                 case muteUser -> {
-                    {
-                        long muteTarget = botWrapper.getAt(event.getMessage());
-                        if (muteTarget == -1) {
-                            muteTarget = Long.parseLong(iter.next());
-                        }
-                        Member targetMember = botWrapper.getGroupMember(groupId, muteTarget);
-                        if (targetMember != null) {
-                            targetMember.mute(Integer.parseInt(iter.next()));
-                        } else {
-                            sendGroupMessage(groupId, "未找到该成员:" + muteTarget);
-                        }
+                    long muteTarget = botWrapper.getAt(event.getMessage());
+                    if (muteTarget == -1) {
+                        muteTarget = Long.parseLong(iter.next());
+                    }
+                    Member targetMember = botWrapper.getGroupMember(groupId, muteTarget);
+                    if (targetMember != null) {
+                        targetMember.mute(Integer.parseInt(iter.next()));
+                    } else {
+                        sendGroupMessage(groupId, "未找到该成员:" + muteTarget);
                     }
                     return true;
                 }
             }
             //only owner
             if (!configManager.getPersonFromQQ(qq).hasOwnerPermission()) {
-                throw new SJFPermissionDeniedException(event);
+//                throw new SJFPermissionDeniedException(event);
+                return false;
             }
             switch (command) {
                 case hotFix -> {
@@ -381,7 +378,6 @@ public class AdminMessage extends BaseModule implements IGroupMessageEvent {
                             sendQuote(event, "已保存" + file.getName());
                         }
                     }
-
                 }
             }
             return true;

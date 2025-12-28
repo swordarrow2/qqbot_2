@@ -101,7 +101,7 @@ public class RepeaterManager extends BaseModule implements IGroupMessageEvent {
                             } else if (message instanceof Image) {
                                 try {
                                     File imageFile = botWrapper.downloadTempImage((Image) message);
-                                    byte[] bytes = moduleManager.getModule(ImageProcess.class).randomTransaction(imageFile);
+                                    byte[] bytes = moduleManager.getModule(ImageProcess.class).randomTransaction(null, imageFile, group.get(sender));
                                     messageChainBuilder.append(botWrapper.toImage(bytes, group));
                                 } catch (IOException e) {
                                     e.printStackTrace();
@@ -115,7 +115,7 @@ public class RepeaterManager extends BaseModule implements IGroupMessageEvent {
                     } else if (times++ % 5 == 0) {
                         try {
                             File imageFile = botWrapper.getAvatarFile(group.get(sender));
-                            byte[] bytes = moduleManager.getModule(ImageProcess.class).randomTransaction(imageFile);
+                            byte[] bytes = moduleManager.getModule(ImageProcess.class).randomTransaction(null, imageFile, group.get(sender));
                             sendMessage(group, botWrapper.toImage(bytes, group));
                         } catch (IOException e) {
                             e.printStackTrace();

@@ -152,7 +152,7 @@ public class Dice extends BaseModule implements IGroupMessageEvent {
                     }
                     SecondaryCommand diceRollSecondaryCommand = command.getSecondaryCommand(iterator.next());
                     if (diceRollSecondaryCommand == null) {
-                        return true;
+                        return false;
                     }
                     switch (diceRollSecondaryCommand) {
                         case dice_roll_plane:
@@ -168,7 +168,7 @@ public class Dice extends BaseModule implements IGroupMessageEvent {
                     }
                     SecondaryCommand diceDrawSecondaryCommand = command.getSecondaryCommand(iterator.next());
                     if (diceDrawSecondaryCommand == null) {
-                        return true;
+                        return false;
                     }
                     diceDraw(event, qqId, random, list, iterator, senderNickName, flag, diceDrawSecondaryCommand);
                     return true;
@@ -215,8 +215,10 @@ public class Dice extends BaseModule implements IGroupMessageEvent {
                     sendMessage(gme.getGroup(), "你今天" + sc.cnName + "的收率是" + allPro + "%");
                 }
             }
-            case dice_draw_neta -> sendMessage(gme.getGroup(), String.format("%s今天宜打%s", pname, THGameDataManager.hashSelectNeta(qqId)));
-            case dice_draw_music -> sendMessage(gme.getGroup(), String.format("%s今天宜听%s", pname, THGameDataManager.hashSelectMusic(qqId).name));
+            case dice_draw_neta ->
+                    sendMessage(gme.getGroup(), String.format("%s今天宜打%s", pname, THGameDataManager.hashSelectNeta(qqId)));
+            case dice_draw_music ->
+                    sendMessage(gme.getGroup(), String.format("%s今天宜听%s", pname, THGameDataManager.hashSelectMusic(qqId).name));
             case dice_draw_grandma -> {
                 if (SJFRandom.hashSelectInt(qqId, 16) == 0) {
                     sendMessage(gme.getGroup(), String.format("%s今天宜认八云紫当奶奶", pname));

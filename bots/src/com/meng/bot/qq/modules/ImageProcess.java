@@ -5,6 +5,7 @@ import com.madgag.gif.fmsware.GifDecoder;
 import com.meng.api.SauceNaoApi;
 import com.meng.bot.annotation.CommandDescribe;
 import com.meng.bot.config.Functions;
+import com.meng.bot.config.Person;
 import com.meng.bot.qq.BaseModule;
 import com.meng.bot.qq.BotWrapper;
 import com.meng.bot.qq.command.Command;
@@ -42,8 +43,8 @@ public class ImageProcess extends BaseModule implements IGroupMessageEvent {
     private final ImageProcessNetwok network = new ImageProcessNetwok();
     private final ImageTransaction local = new ImageTransaction();
 
-    public byte[] randomTransaction(File imageFile) throws IOException {
-        return local.randomTransaction(imageFile);
+    public byte[] randomTransaction(GroupMessageEvent event, File imageFile, UserOrBot target) throws IOException {
+        return local.randomTransaction(event, imageFile, target);
     }
 
     @Override
@@ -70,28 +71,27 @@ public class ImageProcess extends BaseModule implements IGroupMessageEvent {
         try {
             if (quoteReply != null) {
                 GroupMessageEvent quotedEvent = (GroupMessageEvent) botMessageHandler.getEvent(quoteReply.getSource());
-                if (local.onGroupMessage(command, event, quotedEvent)) {
+                if (local.onMessage(command, quotedEvent)) {
                     return true;
                 }
-                if (network.onGroupMessage(command, event, quotedEvent)) {
+                if (network.onMessage(command, quotedEvent)) {
                     return true;
                 }
+            }
+            long atqq = botWrapper.getAt(messageChain);
+            if (atqq == botWrapper.getId()) {
+                File avatar = botWrapper.getAvatarFile(event.getSender());
+                return local.generalImage(command, event, avatar, event.getSender());
+            } else if (atqq != -1) {
+                NormalMember groupMember = botWrapper.getGroupMember(event.getGroup().getId(), atqq);
+                File avatar = botWrapper.getAvatarFile(groupMember);
+                return local.generalImage(command, event, avatar, groupMember);
             } else {
-                long atqq = botWrapper.getAt(messageChain);
-                if (atqq == botWrapper.getId()) {
-                    File avatar = botWrapper.getAvatarFile(event.getSender());
-                    return local.generalImage(command, event, avatar, event.getSender());
-                } else if (atqq != -1) {
-                    NormalMember groupMember = botWrapper.getGroupMember(event.getGroup().getId(), atqq);
-                    File avatar = botWrapper.getAvatarFile(groupMember);
-                    return local.generalImage(command, event, avatar, groupMember);
-                } else {
-                    if (local.onGroupMessage(command, event, event)) {
-                        return true;
-                    }
-                    if (network.onGroupMessage(command, event, event)) {
-                        return true;
-                    }
+                if (local.onMessage(command, event)) {
+                    return true;
+                }
+                if (network.onMessage(command, event)) {
+                    return true;
                 }
             }
         } catch (IOException e) {
@@ -110,7 +110,7 @@ public class ImageProcess extends BaseModule implements IGroupMessageEvent {
                     put(SecondaryCommand.searchPicture, (simg, event) -> {
                         try {
                             SauceNaoApi.SauceNaoResult mResults = SauceNaoApi.getSauce(new URL(botWrapper.getUrl(simg)).openStream());
-                            if (mResults.getResults().size() < 1) {
+                            if (mResults.getResults().isEmpty()) {
                                 sendQuote(event, "没有相似度较高的图片");
                                 return;
                             }
@@ -160,8 +160,8 @@ public class ImageProcess extends BaseModule implements IGroupMessageEvent {
             });
         }
 
-        public boolean onGroupMessage(SecondaryCommand command, GroupMessageEvent event, GroupMessageEvent quotedEvent) {
-            Image miraiImg = getImage(event, quotedEvent);
+        public boolean onMessage(SecondaryCommand command, GroupMessageEvent event) {
+            Image miraiImg = getImage(event);
             long senderId = event.getSender().getId();
             if (miraiImg != null && functionMap.containsKey(command)) {
                 sendQuote(event, "正在识别……");
@@ -184,52 +184,58 @@ public class ImageProcess extends BaseModule implements IGroupMessageEvent {
 
     private class ImageTransaction {
 
-        private final ConcurrentHashMap<Long, Function<BufferedImage, BufferedImage>> ready = new ConcurrentHashMap<>();
-        private final Map<SecondaryCommand, Function<BufferedImage, BufferedImage>> functions;
-        private final Map<SecondaryCommand, BiFunction<BufferedImage, String, BufferedImage>> bifunctions;
+        private final ConcurrentHashMap<Long, BiFunction<BufferedImage, String, BufferedImage>> ready = new ConcurrentHashMap<>();
+        private final Map<SecondaryCommand, BiFunction<BufferedImage, String, BufferedImage>> functions;
 
         private ImageTransaction() {
             functions = Collections.unmodifiableMap(new HashMap<>() {
                 {
-                    put(SecondaryCommand.imageToGray, p1 -> ImageFactory.getInstance().generateGray(p1));
-                    put(SecondaryCommand.imageRotate, p1 -> ImageFactory.getInstance().generateRotateImage(p1, 90));
-                    put(SecondaryCommand.imageUpsideDown, p1 -> ImageFactory.getInstance().generateMirror(p1, 1));
-                    put(SecondaryCommand.imageFlip, p1 -> ImageFactory.getInstance().generateMirror(p1, 0));
-                    put(SecondaryCommand.imageUpSeija, p1 -> ImageFactory.getInstance().generateMirror(p1, 2));
-                    put(SecondaryCommand.expression_jingShenZhiZhu, p1 -> ImageFactory.getInstance().generateJingShenZhiZhu(p1));
-                    put(SecondaryCommand.expression_shenChu, p1 -> ImageFactory.getInstance().generateShenChu(p1));
-                    put(SecondaryCommand.expression_xiaoHuaJia, p1 -> ImageFactory.getInstance().generateXiaoHuaJia(p1));
-                    put(SecondaryCommand.expression_JiXuGanHuo, p1 -> ImageFactory.getInstance().generateJiXuGanHuo(p1));
-                    put(SecondaryCommand.expression_BuKeYiJianMian, p1 -> ImageFactory.getInstance().generateBuKeYiJianMian(p1));
-                    put(SecondaryCommand.expression_ZaiXiang, p1 -> ImageFactory.getInstance().generateZaiXiang(p1));
-                    put(SecondaryCommand.expression_BaoJin, p1 -> ImageFactory.getInstance().generateBaojin(p1));
+                    put(SecondaryCommand.imageToGray, (p1, s) -> ImageFactory.getInstance().generateGray(p1));
+                    put(SecondaryCommand.imageRotate, (p1, s) -> ImageFactory.getInstance().generateRotateImage(p1, 90));
+                    put(SecondaryCommand.imageUpsideDown, (p1, s) -> ImageFactory.getInstance().generateMirror(p1, 1));
+                    put(SecondaryCommand.imageFlip, (p1, s) -> ImageFactory.getInstance().generateMirror(p1, 0));
+                    put(SecondaryCommand.imageUpSeija, (p1, s) -> ImageFactory.getInstance().generateMirror(p1, 2));
+                    put(SecondaryCommand.expression_jingShenZhiZhu, (p1, s) -> ImageFactory.getInstance().generateJingShenZhiZhu(p1));
+                    put(SecondaryCommand.expression_shenChu, (p1, s) -> ImageFactory.getInstance().generateShenChu(p1));
+                    put(SecondaryCommand.expression_xiaoHuaJia, (p1, s) -> ImageFactory.getInstance().generateXiaoHuaJia(p1));
+                    put(SecondaryCommand.expression_JiXuGanHuo, (p1, s) -> ImageFactory.getInstance().generateJiXuGanHuo(p1));
+                    put(SecondaryCommand.expression_BuKeYiJianMian, (p1, s) -> ImageFactory.getInstance().generateBuKeYiJianMian(p1));
+                    put(SecondaryCommand.expression_ZaiXiang, (p1, s) -> ImageFactory.getInstance().generateZaiXiang(p1));
+                    put(SecondaryCommand.expression_BaoJin, (p1, s) -> ImageFactory.getInstance().generateBaojin(p1));
+                    put(SecondaryCommand.expression_WoYongYuanXiHuan, (bufferedImage, s) -> ImageFactory.getInstance().generateWoYongYuanXiHuan(bufferedImage, s));
+                    put(SecondaryCommand.expression_FaDian, (bufferedImage, s) -> ImageFactory.getInstance().generateFaDian(bufferedImage, s));
+                    put(SecondaryCommand.expression_Pa, (bufferedImage, s) -> ImageFactory.getInstance().generatePa(bufferedImage, s));
                 }
             });
-            bifunctions = Collections.unmodifiableMap(new HashMap<>() {{
-                put(SecondaryCommand.expression_WoYongYuanXiHuan, (bufferedImage, s) -> ImageFactory.getInstance().generateWoYongYuanXiHuan(bufferedImage, s));
-                put(SecondaryCommand.expression_FaDian, (bufferedImage, s) -> ImageFactory.getInstance().generateFaDian(bufferedImage, s));
-                put(SecondaryCommand.expression_Pa, (bufferedImage, s) -> ImageFactory.getInstance().generatePa(bufferedImage, s));
-            }});
         }
 
-        private byte[] randomTransaction(File imageFile) throws IOException {
+        private byte[] randomTransaction(GroupMessageEvent event, File imageFile, UserOrBot target) throws IOException {
             SecondaryCommand command = SJFRandom.randomSelect(functions.keySet());
-            Function<BufferedImage, BufferedImage> trans = functions.get(command);
+            BiFunction<BufferedImage, String, BufferedImage> trans = functions.get(command);
+            String nick;
+            if (event == null) {
+                if (target != null) {
+                    nick = configManager.getNickName(0, target.getId());
+                } else {
+                    nick = "";
+                }
+            } else {
+                nick = configManager.getNickName(event.getGroup().getId(), target.getId());
+            }
+
             if (FileFormat.isFormat(imageFile, "gif")) {
                 if (command == SecondaryCommand.imageUpSeija) {
                     return SeijaImageFactory.reverseGIF(imageFile, 2);
-                } else {
-                    return generateDynamic(imageFile, trans);
                 }
-            } else {
-                return generateStatic(imageFile, trans);
+                return generateDynamic(imageFile, trans, nick);
             }
+            return generateStatic(imageFile, trans, nick);
         }
 
-        public boolean onGroupMessage(SecondaryCommand command, GroupMessageEvent event, GroupMessageEvent quotedEvent) {
-            Image miraiImg = getImage(event, quotedEvent);
+        public boolean onMessage(SecondaryCommand command, GroupMessageEvent event) {
+            Image miraiImg = getImage(event);
             try {
-                return generalImage(command, event, miraiImg, event.getSender());
+                return generalImage(command, event, botWrapper.downloadTempImage(miraiImg), event.getSender());
             } catch (IOException e) {
                 if (botWrapper.debug) {
                     ExceptionCatcher.getInstance().uncaughtException(Thread.currentThread(), e);
@@ -238,53 +244,32 @@ public class ImageProcess extends BaseModule implements IGroupMessageEvent {
             return false;
         }
 
-        private boolean generalImage(SecondaryCommand command, GroupMessageEvent event, Image miraiImg, UserOrBot target) throws IOException {
-            return generalImage(command, event, botWrapper.downloadTempImage(miraiImg), target);
-        }
-
         private boolean generalImage(SecondaryCommand command, GroupMessageEvent event, File receivedImage, UserOrBot target) throws IOException {
 
-            if (receivedImage != null && functions.containsKey(command)) {
-                ready.remove(target.getId());
-                if (FileFormat.isFormat(receivedImage, "gif")) {
-                    if (command == SecondaryCommand.imageUpSeija) {
-                        sendMessage(event, botWrapper.toImage(SeijaImageFactory.reverseGIF(receivedImage, 2), event.getGroup()));
-                    } else {
-                        sendMessage(event, botWrapper.toImage(generateDynamic(receivedImage, functions.get(command)), event.getGroup()));
-                    }
-                } else {
-                    sendMessage(event, botWrapper.toImage(generateStatic(receivedImage, functions.get(command)), event.getGroup()));
-                }
-                return true;
-            } else if (receivedImage == null && functions.containsKey(command)) {
-                ready.put(target.getId(), functions.get(command));
+            BiFunction<BufferedImage, String, BufferedImage> function = null;
+            if (functions.containsKey(command)) {
+                function = functions.get(command);
+            } else if (ready.containsKey(target.getId())) {
+                function = ready.remove(target.getId());
+            }
+            if (receivedImage == null && function != null) {
+                ready.put(target.getId(), function);
                 sendQuote(event, "发送一张图片吧");
                 return true;
-            } else if (receivedImage != null && ready.containsKey(target.getId())) {
-                Function<BufferedImage, BufferedImage> function = ready.remove(target.getId());
-                if (FileFormat.isFormat(receivedImage, "gif")) {
-                    if (function == functions.get(SecondaryCommand.imageUpSeija)) {
+            }
+            if (receivedImage != null) {
+                boolean isGif = FileFormat.isFormat(receivedImage, "gif");
+                String nick = configManager.getNickName(event.getGroup().getId(), target.getId());
+                if (function != null) {
+                    if (isGif && function == functions.get(SecondaryCommand.imageUpSeija)) {
                         sendMessage(event, botWrapper.toImage(SeijaImageFactory.reverseGIF(receivedImage, 2), event.getGroup()));
+                    } else if (isGif) {
+                        sendMessage(event, botWrapper.toImage(generateDynamic(receivedImage, function, nick), event.getGroup()));
                     } else {
-                        sendMessage(event, botWrapper.toImage(generateDynamic(receivedImage, function), event.getGroup()));
+                        sendMessage(event, botWrapper.toImage(generateStatic(receivedImage, function, nick), event.getGroup()));
                     }
-                } else {
-                    sendMessage(event, botWrapper.toImage(generateStatic(receivedImage, function), event.getGroup()));
+                    return true;
                 }
-                return true;
-            } else if (receivedImage != null && bifunctions.containsKey(command)) {
-                if (FileFormat.isFormat(receivedImage, "gif")) {
-                    sendMessage(event,
-                            botWrapper.toImage(
-                                    generateDynamic(receivedImage, bifunctions.get(command), target.getNick()),
-                                    event.getGroup()));
-                } else {
-                    sendMessage(event,
-                            botWrapper.toImage(
-                                    generateStatic(receivedImage, bifunctions.get(command), target.getNick()),
-                                    event.getGroup()));
-                }
-                return true;
             }
             return false;
         }
@@ -292,13 +277,6 @@ public class ImageProcess extends BaseModule implements IGroupMessageEvent {
 
     private byte[] generateStatic(File imageFile, BiFunction<BufferedImage, String, BufferedImage> function, String name) throws IOException {
         BufferedImage result = function.apply(ImageIO.read(imageFile), name);
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        ImageIO.write(result, "png", baos);
-        return baos.toByteArray();
-    }
-
-    private byte[] generateStatic(File imageFile, Function<BufferedImage, BufferedImage> function) throws IOException {
-        BufferedImage result = function.apply(ImageIO.read(imageFile));
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         ImageIO.write(result, "png", baos);
         return baos.toByteArray();
@@ -323,45 +301,15 @@ public class ImageProcess extends BaseModule implements IGroupMessageEvent {
         return baos.toByteArray();
     }
 
-    private byte[] generateDynamic(File imageFile, Function<BufferedImage, BufferedImage> function) throws FileNotFoundException {
-        GifDecoder gifDecoder = new GifDecoder();
-        FileInputStream fis = new FileInputStream(imageFile);
-        int statusCode = gifDecoder.read(fis);
-        if (statusCode != 0) {
-            return null;
+    private Image getImage(GroupMessageEvent event) {
+        Image img = event.getMessage().get(Image.Key);
+        if (img != null) {
+            return img;
         }
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        AnimatedGifEncoder localAnimatedGifEncoder = new AnimatedGifEncoder();
-        localAnimatedGifEncoder.start(baos);//start
-        localAnimatedGifEncoder.setRepeat(0);//设置生成gif的开始播放时间。0为立即开始播放
-        for (int i = 0; i < gifDecoder.getFrameCount(); i++) {
-            localAnimatedGifEncoder.setDelay(gifDecoder.getDelay(i));
-            localAnimatedGifEncoder.addFrame(function.apply(gifDecoder.getFrame(i)));
+        FlashImage fi = event.getMessage().get(FlashImage.Key);
+        if (fi != null) {
+            return fi.getImage();
         }
-        localAnimatedGifEncoder.finish();
-        return baos.toByteArray();
+        return null;
     }
-
-    private Image getImage(GroupMessageEvent event, GroupMessageEvent quotedEvent) {
-        Image miraiImg;
-        if (quotedEvent == null) {
-            miraiImg = event.getMessage().get(Image.Key);
-            if (miraiImg == null) {
-                FlashImage fi = event.getMessage().get(FlashImage.Key);
-                if (fi != null) {
-                    miraiImg = fi.getImage();
-                }
-            }
-        } else {
-            miraiImg = quotedEvent.getMessage().get(Image.Key);
-            if (miraiImg == null) {
-                FlashImage fi = quotedEvent.getMessage().get(FlashImage.Key);
-                if (fi != null) {
-                    miraiImg = fi.getImage();
-                }
-            }
-        }
-        return miraiImg;
-    }
-
 }

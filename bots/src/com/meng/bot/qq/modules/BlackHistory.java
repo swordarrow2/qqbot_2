@@ -3,6 +3,7 @@ package com.meng.bot.qq.modules;
 import com.meng.bot.config.Functions;
 import com.meng.bot.config.Person;
 import com.meng.bot.config.QQGroupConfig;
+import com.meng.bot.qq.BaseModule;
 import com.meng.bot.qq.BotWrapper;
 import com.meng.bot.qq.handler.group.IGroupMessageEvent;
 import com.meng.tools.normal.FileTool;
@@ -12,106 +13,159 @@ import com.meng.tools.sjf.SJFRandom;
 import net.mamoe.mirai.event.events.GroupMessageEvent;
 import net.mamoe.mirai.message.data.Image;
 import net.mamoe.mirai.message.data.Message;
-import net.mamoe.mirai.message.data.MessageChain;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
-public class BlackHistory extends StepCommandProcessor<Long> implements IGroupMessageEvent {
+public class BlackHistory extends BaseModule implements IGroupMessageEvent {
 
     public BlackHistory(BotWrapper b) {
         super(b);
     }
 
-    @Override
-    protected boolean preJudge(GroupMessageEvent event) {
-        QQGroupConfig config = configManager.getGroupConfig(event.getGroup().getId());
-        return config == null || !config.isFunctionEnabled(Functions.Aphorism);//TODO check function bug
-    }
+    // 状态映射：发送者ID -> 目标用户ID（null表示不在状态，0表示等待输入目标用户，>0表示已选择目标用户）
+    protected Map<Long, Long> stateMap = new HashMap<>();
 
     @Override
     public boolean onGroupMessage(GroupMessageEvent event) {
-        if (super.onGroupMessage(event)) {
-            return true;
+        QQGroupConfig config = configManager.getGroupConfig(event.getGroup().getId());
+        if (config == null || !config.isFunctionEnabled(Functions.BlackHistory)) {
+            return false;
         }
         String msg = event.getMessage().contentToString();
-        if (!msg.startsWith("添加") && msg.endsWith("迫害图")) {
-            long target = botWrapper.getAt(event.getMessage());
-            String substring = msg.substring(0, msg.length() - 3);
-            if (target != -1) {
-                substring = target + "";
-            }
-            if (substring.equals("其他")) {
-                substring = "-2";
-            }
-            File[] listFiles = SJFPathTool.getPlaneSentencePath(substring).listFiles();
-            if (listFiles == null || listFiles.length == 0) {
-                return false;
-            }
-            sendMessage(event, botWrapper.toImage(SJFRandom.randomSelect(listFiles), event.getGroup()));
+        if (!msg.startsWith("添加") && msg.endsWith("迫害图") && msg.length() > 3) {
+            handleGetImage(event, msg);
             return true;
         }
-        final long qq = event.getSender().getId();
-        Person personFromQQ = configManager.getPersonFromQQ(qq);
+        final long sender = event.getSender().getId();
+        Person personFromQQ = configManager.getPersonFromQQ(sender);
         if (personFromQQ == null || !personFromQQ.hasAdminPermission()) {
             return false;
         }
-        if (msg.equals("添加迫害图")) {
-            StepRunnable<Long> stepRunnable = new StepRunnable<>();
-            addOnAction(qq, stepRunnable);
-            stepRunnable.addActions((event1, p2) -> {
-                moduleManager.getModule(MessageRefuse.class).registUnblock(qq);
-                sendQuote(event1, "发送qq号码或at或\"其他\"以选择是谁的图\n");
-            }, (event12, runnable) -> {
-                MessageChain message = event12.getMessage();
-                long target = botWrapper.getAt(message);
-                if (message.contentToString().equals("其他")) {
-                    target = -2;
-                }
-                if (target == -1) {
-                    try {
-                        target = Long.parseLong(event12.getMessage().contentToString());
-                    } catch (NumberFormatException e) {
-                        sendQuote(event12, e.toString());
-                        cancel(event12);
-                        return;
-                    }
-                }
-                sendQuote(event12, "发送图片为[" + (target != -2 ? target + "" : "其他") + "]添加图片,或发送取消添加以退出");
-                runnable.extra = target;
-            });
-            stepRunnable.setLoopPoint();
-            stepRunnable.addActions((event13, runnable) -> {
-                int leng = 0;
-                for (Message message : event13.getMessage()) {
-                    if (message instanceof Image) {
-                        byte[] img;
-                        try {
-                            img = Network.httpGetRaw(botWrapper.getUrl(((Image) message)));
-                            FileTool.saveFile(SJFPathTool.getPlaneSentencePath((!runnable.extra.equals(-2L) ? runnable.extra : "其他") + "/" + FileTool.getAutoFileName(img)), img);
-                        } catch (IOException e) {
-                            sendQuote(event13, e.toString());
-                            e.printStackTrace();
-                            continue;
-                        }
-                        leng += img.length;
-                    }
-                }
-                if (leng == 0) {
-                    cancel(event13);
-                } else {
-                    sendQuote(event13, "保存完成(" + (leng / 1024) + "KB)");
-                    runnable.gotoLoopPoint();
-                }
-            });
-            stepRunnable.run(event);
+        return handleAddImage(event, msg, sender);
+    }
+
+    private boolean handleAddImage(GroupMessageEvent event, String msg, long sender) {
+        Long state = stateMap.get(sender);
+        // 如果在状态中
+        if (state != null) {
+            if ("取消".equals(msg)) {
+                sendQuote(event, "已取消添加");
+                stateMap.remove(sender);
+                return true;
+            }
+            // 状态0：等待输入目标用户
+            if (state == 0L) {
+                processTargetUserInput(event, msg, sender);
+                return true;
+            }
+            // 状态>0：接收并保存图片
+            processSaveImages(event, sender, state);
             return true;
-        } else if (msg.equals("取消添加")) {
-            if (steps.containsKey(qq)) {
-                moduleManager.getModule(MessageRefuse.class).registNormalBlock(qq);
-                cancel(event);
+        }
+        if ("添加迫害图".equals(msg)) {
+            sendQuote(event, "发送QQ号码或@目标用户，或发送\"取消\"退出");
+            stateMap.put(sender, 0L);
+            return true;
+        }
+
+        return false;
+    }
+
+    private void processTargetUserInput(GroupMessageEvent event, String msg, long sender) {
+        long target = botWrapper.getAt(event.getMessage());
+        if (target <= 0) {
+            try {
+                target = Long.parseLong(msg);
+            } catch (NumberFormatException e) {
+                sendQuote(event, "QQ号格式错误，请发送纯数字QQ号或@目标用户，或发送\"取消\"退出");
+                return;
             }
         }
-        return false;
+        stateMap.put(sender, target);
+        sendQuote(event, "请发送要为[" + target + "]添加的图片，或发送\"取消\"退出");
+    }
+
+    private void processSaveImages(GroupMessageEvent event, long sender, long targetUserId) {
+        boolean hasImage = false;
+        int totalSize = 0;
+        int savedCount = 0;
+        for (Message message : event.getMessage()) {
+            if (message instanceof Image) {
+                hasImage = true;
+                try {
+                    String imageUrl = botWrapper.getUrl(((Image) message));
+                    byte[] imgData = Network.httpGetRaw(imageUrl);
+                    if (imgData == null || imgData.length == 0) {
+                        continue;
+                    }
+                    // 确保目标文件夹存在
+                    File targetDir = SJFPathTool.getBlackHistoryPath(String.valueOf(targetUserId));
+                    if (!targetDir.exists()) {
+                        targetDir.mkdirs();
+                    }
+                    // 保存文件
+                    FileTool.saveFile(new File(targetDir.getAbsolutePath() + File.separator + FileTool.getAutoFileName(imgData)), imgData);
+                    savedCount++;
+                    totalSize += imgData.length;
+                } catch (Exception e) {
+                    sendQuote(event, "处理图片时出错: " + e.getMessage());
+                    if (botWrapper.debug) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }
+
+        if (hasImage) {
+            if (savedCount > 0) {
+                String sizeInfo = String.format("%.1fKB", totalSize / 1024.0);
+                sendQuote(event, "成功为[" + targetUserId + "]保存了" + savedCount + "张图片，总计" + sizeInfo);
+            }
+            stateMap.remove(sender);
+        } else {
+            sendQuote(event, "未检测到图片");
+            stateMap.remove(sender);
+        }
+    }
+
+    private void handleGetImage(GroupMessageEvent event, String msg) {
+        Person person;
+        long target = botWrapper.getAt(event.getMessage());
+        if (target > 0) {
+            person = configManager.getPersonFromQQ(target);
+        } else {
+            String prefix = msg.substring(0, msg.length() - 3).trim();
+            person = configManager.getPersonFromName(prefix);
+            if (person == null) {
+                try {
+                    long qq = Long.parseLong(prefix);
+                    person = configManager.getPersonFromQQ(qq);
+                } catch (NumberFormatException ignore) {
+                }
+            }
+        }
+        if (person == null) {
+            sendQuote(event, "未找到该用户");
+            return;
+        }
+        File targetDir = SJFPathTool.getBlackHistoryPath(String.valueOf(person.qq));
+        if (!targetDir.exists()) {
+            targetDir = SJFPathTool.getBlackHistoryPath(person.name);
+        }
+        File[] listFiles = targetDir.listFiles();
+
+        if (listFiles == null || listFiles.length == 0) {
+            sendQuote(event, "该用户暂无迫害图");
+            return;
+        }
+        File selectedImage = SJFRandom.randomSelect(listFiles);
+        if (selectedImage != null && selectedImage.exists()) {
+            sendMessage(event, botWrapper.toImage(selectedImage, event.getGroup()));
+        } else {
+            sendQuote(event, "图片文件不存在或已损坏");
+        }
     }
 }

@@ -24,23 +24,21 @@ public abstract class StepCommandProcessor<T> extends BaseModule implements IGro
 
     @Override
     public boolean onGroupMessage(GroupMessageEvent event) {
-        if (preJudge(event)) {
-            return false;
-        }
         long qq = event.getSender().getId();
-        StepRunnable<T> bean = steps.get(qq);
-        if (bean == null) {
+        StepRunnable<T> stepRunnable = steps.get(qq);
+        if (stepRunnable == null) {
             return false;
         }
-        if (!bean.prepare.apply(event, bean)) {
-            steps.remove(bean).cancel(event);
+        if (!stepRunnable.prepare.apply(event, stepRunnable)) {
+            StepRunnable<T> remove = steps.remove(stepRunnable);
+            if (remove != null) {
+                remove.cancel(event);
+            }
             return true;
         }
-        bean.transactCommand.accept(event, bean);
+        stepRunnable.transactCommand.accept(event, stepRunnable);
         return true;
     }
-
-    protected abstract boolean preJudge(GroupMessageEvent event);
 
     public void addOnAction(long senderId, StepRunnable<T> runnable) {
         steps.put(senderId, runnable);

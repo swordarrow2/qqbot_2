@@ -16,8 +16,8 @@ public class SJFPathTool {
     public static File getWordStockImagePath(String fileName) {
         return new File(getWordStockImagePath() + fileName);
     }
-    
-    
+
+
     public static String getSystemDataPath() {
         return getAppDirectory() + "/system_data/";
     }
@@ -25,7 +25,7 @@ public class SJFPathTool {
     public static File getSystemDataPath(String fileName) {
         return new File(getSystemDataPath() + fileName);
     }
-    
+
     public static String getPersistentPath() {
         return getAppDirectory() + "/persistent/";
     }
@@ -74,12 +74,12 @@ public class SJFPathTool {
         return new File(getImagePath() + fileName);
     }
 
-    public static String getPlaneSentencePath() {
-        return getAppDirectory() + "/image/plane_sentence/";
+    public static String getBlackHistoryPath() {
+        return getAppDirectory() + "/image/pohai/";
     }
 
-    public static File getPlaneSentencePath(String fileName) {
-        return new File(getPlaneSentencePath() + fileName);
+    public static File getBlackHistoryPath(String fileName) {
+        return new File(getBlackHistoryPath() + fileName);
     }
 
     public static String getR15Path() {

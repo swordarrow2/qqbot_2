@@ -90,7 +90,7 @@ public class ChatCounter extends BaseModule implements IGroupMessageEvent, INudg
             Long qq = obj.getKey();
 
             stringBuilder.append("\nNo.").append(i + 1).append(":").append(configManager.getNickName(gid, qq))
-                    .append("(").append(qq).append(")").append("-").append(obj.getValue().sentence).append("条");
+                    .append("(").append(qq).append(")").append("->").append(obj.getValue().sentence).append("条");
         }
         list.sort((o1, o2) -> {
             if (Objects.equals(o1.getValue().nudge, o2.getValue().nudge)) {

@@ -10,6 +10,8 @@ import com.meng.bot.qq.BaseModule;
 import com.meng.bot.qq.BotWrapper;
 import com.meng.bot.qq.Permission;
 import net.mamoe.mirai.contact.Group;
+import net.mamoe.mirai.contact.NormalMember;
+import net.mamoe.mirai.contact.Stranger;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -236,18 +238,22 @@ public class ConfigManager extends BaseModule {
 
     public String getNickName(long group, long qq) {
         String nick = configHolder.nicknameMap.get(qq);
-        if (nick == null) {
-            Person pi = getPersonFromQQ(qq);
-            if (pi != null) {
-                nick = pi.name;
-            } else {
-                nick = botWrapper.getGroupMember(group, qq).getNameCard();
-                if (!nick.trim().equals("")) {
-                    nick = botWrapper.getGroupMember(group, qq).getNick();
-                }
-            }
+        if (nick != null) {
+            return nick;
         }
-        return nick == null ? String.valueOf(qq) : nick;
+        Person pi = getPersonFromQQ(qq);
+        if (pi != null) {
+            return pi.name;
+        }
+        NormalMember groupMember = botWrapper.getGroupMember(group, qq);
+        if (groupMember != null) {
+            return groupMember.getNameCard();
+        }
+        Stranger stranger = botWrapper.getStranger(qq);
+        if (stranger != null) {
+            return stranger.getNick();
+        }
+        return String.valueOf(qq);
     }
 
     @Override

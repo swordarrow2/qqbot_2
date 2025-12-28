@@ -27,27 +27,27 @@ public class THGameDataManager {
     public static String[] pl05 = {"博丽灵梦", "雾雨魔理沙", "魅魔", "幽香"};
     public static String[] pl09 = {"博丽灵梦", "雾雨魔理沙", "十六夜咲夜", "魂魄妖梦", "铃仙·优昙华院·因幡", "琪露诺", "莉莉卡·普莉兹姆利巴", "梅露兰·普莉兹姆利巴", "露娜萨·普莉兹姆利巴", "米斯蒂娅·萝蕾拉", "因幡帝", "射命丸文", "梅蒂欣·梅兰可莉", "风见幽香", "小野冢小町", "四季映姬·亚玛萨那度"};
     public static String[] plDiff = {"easy", "normal", "hard", "lunatic"};
-    public static String[] neta = {"红lnb", "红lnm", "妖lnm", "妖lnn", "永lnm", "风lnm","风lnn","殿lnm", "船lnm", "船lnn","庙lnm","城lnm","绀lnm","璋lnn"};
-    public static String[] wayToGoodEnd = { "红魔乡normal", "妖妖梦easy", "永夜抄6B", "风神录normal", "地灵殿normal", "星莲船normal", "神灵庙normal", "辉针城灵梦B", "辉针城魔理沙B", "辉针城咲夜B", "绀珠传no miss","天空璋extra","鬼形兽normal" };
+    public static String[] neta = {"红lnb", "红lnm", "妖lnm", "妖lnn", "永lnm", "风lnm", "风lnn", "殿lnm", "船lnm", "船lnn", "庙lnm", "城lnm", "绀lnm", "璋lnn"};
+    public static String[] wayToGoodEnd = {"红魔乡normal", "妖妖梦easy", "永夜抄6B", "风神录normal", "地灵殿normal", "星莲船normal", "神灵庙normal", "辉针城灵梦B", "辉针城魔理沙B", "辉针城咲夜B", "绀珠传no miss", "天空璋extra", "鬼形兽normal"};
 
     private static THGameData[] thGameData = null;
 
     public static THGameData[] getThGameData() {
         if (thGameData == null) {
             thGameData = new THGameData[]{
-                TH06Data.getInstance(),
-                TH07Data.getInstance(),
-                TH08Data.getInstance(),
-                TH10Data.getInstance(),
-                TH11Data.getInstance(),
-                TH12Data.getInstance(),
-                TH13Data.getInstance(),
-                TH14Data.getInstance(),
-                TH15Data.getInstance(),
-                TH16Data.getInstance(),
-                TH17Data.getInstance(),
-                TH18Data.getInstance(),
-                THSSSData.getInstance()
+                    TH06Data.getInstance(),
+                    TH07Data.getInstance(),
+                    TH08Data.getInstance(),
+                    TH10Data.getInstance(),
+                    TH11Data.getInstance(),
+                    TH12Data.getInstance(),
+                    TH13Data.getInstance(),
+                    TH14Data.getInstance(),
+                    TH15Data.getInstance(),
+                    TH16Data.getInstance(),
+                    TH17Data.getInstance(),
+                    TH18Data.getInstance(),
+                    THSSSData.getInstance()
             };
         }
         return thGameData;
@@ -76,7 +76,7 @@ public class THGameDataManager {
 
     public static THSpell[] getSpellFromNotDiff(int count, int diffFlag) {
         THSpell[] spshs = new THSpell[count];
-        for (int i = 0;i < count;++i) {
+        for (int i = 0; i < count; ++i) {
             THSpell splc;
             while (true) {
                 THGameData spellss = SJFRandom.randomSelect(thGameData);
@@ -91,8 +91,8 @@ public class THGameDataManager {
     }
 
     public static THSpell getTHSpell(String spellName) {
-        for (THGameData scs:thGameData) {
-            for (THSpell sc :scs.getSpellCards()) {
+        for (THGameData scs : thGameData) {
+            for (THSpell sc : scs.getSpellCards()) {
                 if (sc.cnName.contains(spellName) || sc.jpName.contains(spellName)) {
                     return sc;
                 }
@@ -102,8 +102,8 @@ public class THGameDataManager {
     }
 
     public static THSpell getTHSpell(String spellName, int diff) {
-        for (THGameData scs:thGameData) {
-            for (THSpell sc:scs.getSpellCards()) {
+        for (THGameData scs : thGameData) {
+            for (THSpell sc : scs.getSpellCards()) {
                 if (sc.cnName.contains(spellName) && sc.difficult == diff) {
                     return sc;
                 }
@@ -114,147 +114,72 @@ public class THGameDataManager {
 
     public static HashSet<THSpell> getCharaTHSpell(final String name) {
         final HashSet<THSpell> hscs = new HashSet<>();
-        forEachSpell(new Consumer<THSpell>(){
-
-                @Override
-                public void accept(THSpell sc) {
-                    if (sc.master.equals(name)) {
-                        hscs.add(sc);
-                    } 
-                }
-            });
+        forEachSpell(sc -> {
+            if (sc.master.equals(name)) {
+                hscs.add(sc);
+            }
+        });
         return hscs;
     }
 
     public static HashSet<THSpell> getCharaTHSpell(final String name, final int diff) {
         final HashSet<THSpell> hscs = new HashSet<>();
-        forEachSpell(new Consumer<THSpell>(){
-
-                @Override
-                public void accept(THSpell sc) {
-                    if (sc.master.equals(name) && sc.difficult == diff) {
-                        hscs.add(sc);
-                    } 
-                }
-            });
+        forEachSpell(sc -> {
+            if (sc.master.equals(name) && sc.difficult == diff) {
+                hscs.add(sc);
+            }
+        });
         return hscs;
     }
 
     public static HashSet<THSpell> getCharaTHSpell(final String name, final String... spellExcept) {
         final HashSet<THSpell> hscs = new HashSet<>();
-        forEachSpell(new Consumer<THSpell>(){
-
-                @Override
-                public void accept(THSpell sc) {
-                    if (!sc.master.equals(name)) {
-                        return;
-                    }
-                    for (String necx:spellExcept) {
-                        if (!sc.cnName.equals(necx)) {
-                            hscs.add(sc);
-                        }
-                    }
+        forEachSpell(sc -> {
+            if (!sc.master.equals(name)) {
+                return;
+            }
+            for (String necx : spellExcept) {
+                if (!sc.cnName.equals(necx)) {
+                    hscs.add(sc);
                 }
-            });
+            }
+        });
         return hscs;
     }
 
     public static String randomPlane(String game) {
-        switch (game) {
-            case "东方灵异传":
-            case "th1":
-            case "th01":
-                return SJFRandom.randomSelect(pl01);
-            case "东方封魔录":
-            case "th2":
-            case "th02":
-                return SJFRandom.randomSelect(pl02);
-            case "东方梦时空":
-            case "th3":
-            case "th03":
-                return SJFRandom.randomSelect(pl03);
-            case "东方幻想乡":
-            case "th4":
-            case "th04":
-                return SJFRandom.randomSelect(pl04);
-            case "东方怪绮谈":
-            case "th5":
-            case "th05":
-                return SJFRandom.randomSelect(pl05);
-            case "东方红魔乡":
-            case "th6":
-            case "th06":
-            case "tEoSD":
-                return SJFRandom.randomSelect(TH06Data.getInstance().getPlayers()).randomType();
-            case "东方妖妖梦":
-            case "th7":
-            case "th07":
-            case "PCB":
-                return SJFRandom.randomSelect(TH07Data.getInstance().getPlayers()).randomType();
-            case "东方永夜抄":
-            case "th8":
-            case "th08":
-            case "IN":
-                return SJFRandom.randomSelect(TH08Data.getInstance().getPlayers()).randomType();
-            case "东方花映塚":
-            case "东方花映冢":
-            case "th9":
-            case "th09":
-            case "PoFV":
-                return SJFRandom.randomSelect(pl09);
-            case "东方风神录":
-            case "th10":
-            case "MoF":
-                return SJFRandom.randomSelect(TH10Data.getInstance().getPlayers()).randomType();
-            case "东方地灵殿":
-            case "th11":
-                return SJFRandom.randomSelect(TH11Data.getInstance().getPlayers()).randomType();
-            case "东方星莲船":
-            case "th12":
-            case "UFO":
-                return SJFRandom.randomSelect(TH12Data.getInstance().getPlayers()).randomType();
-            case "东方神灵庙":
-            case "th13":
-            case "TD":
-                return SJFRandom.randomSelect(TH13Data.getInstance().getPlayers()).randomType();
-            case "东方辉针城":
-            case "th14":
-            case "DDC":
-                return SJFRandom.randomSelect(TH14Data.getInstance().getPlayers()).randomType();
-            case "东方绀珠传":
-            case "th15":
-            case "LoLK":
-                return SJFRandom.randomSelect(TH15Data.getInstance().getPlayers()).randomType();
-            case "东方天空璋":
-            case "th16":
-            case "HSiFS":
-                return SJFRandom.randomSelect(TH16Data.getInstance().getPlayers()).randomType();
-            case "东方鬼形兽":
-            case "th17":
-            case "WBaWC":
-                return SJFRandom.randomSelect(TH17Data.getInstance().getPlayers()).randomType();
-            case "东方虹龙洞":
-            case "th18":
-            case "UM":
-                return SJFRandom.randomSelect(TH18Data.getInstance().getPlayers()).randomType();
-            case "东方文花帖":
-            case "th9.5":
-            case "StB":
-                //       case "东方文花帖DS":
-                //       case "th12.5":
-                //       case "DS":
-            case "妖精大战争":
-            case "th12.8":
-            case "弹幕天邪鬼":
-            case "th14.3":
-            case "ISC":
-            case "秘封噩梦日记":
-            case "th16.5":
-            case "VD":
-                return "就一个飞机你roll你🐴呢";
-            default:
-                return "只有2un飞机游戏";
-        }
+        return switch (game) {
+            case "东方灵异传", "th1", "th01" -> SJFRandom.randomSelect(pl01);
+            case "东方封魔录", "th2", "th02" -> SJFRandom.randomSelect(pl02);
+            case "东方梦时空", "th3", "th03" -> SJFRandom.randomSelect(pl03);
+            case "东方幻想乡", "th4", "th04" -> SJFRandom.randomSelect(pl04);
+            case "东方怪绮谈", "th5", "th05" -> SJFRandom.randomSelect(pl05);
+            case "东方红魔乡", "th6", "th06", "tEoSD" ->
+                    SJFRandom.randomSelect(TH06Data.getInstance().getPlayers()).randomType();
+            case "东方妖妖梦", "th7", "th07", "PCB" ->
+                    SJFRandom.randomSelect(TH07Data.getInstance().getPlayers()).randomType();
+            case "东方永夜抄", "th8", "th08", "IN" ->
+                    SJFRandom.randomSelect(TH08Data.getInstance().getPlayers()).randomType();
+            case "东方花映塚", "东方花映冢", "th9", "th09", "PoFV" -> SJFRandom.randomSelect(pl09);
+            case "东方风神录", "th10", "MoF" ->
+                    SJFRandom.randomSelect(TH10Data.getInstance().getPlayers()).randomType();
+            case "东方地灵殿", "th11" -> SJFRandom.randomSelect(TH11Data.getInstance().getPlayers()).randomType();
+            case "东方星莲船", "th12", "UFO" ->
+                    SJFRandom.randomSelect(TH12Data.getInstance().getPlayers()).randomType();
+            case "东方神灵庙", "th13", "TD" -> SJFRandom.randomSelect(TH13Data.getInstance().getPlayers()).randomType();
+            case "东方辉针城", "th14", "DDC" ->
+                    SJFRandom.randomSelect(TH14Data.getInstance().getPlayers()).randomType();
+            case "东方绀珠传", "th15", "LoLK" ->
+                    SJFRandom.randomSelect(TH15Data.getInstance().getPlayers()).randomType();
+            case "东方天空璋", "th16", "HSiFS" ->
+                    SJFRandom.randomSelect(TH16Data.getInstance().getPlayers()).randomType();
+            case "东方鬼形兽", "th17", "WBaWC" ->
+                    SJFRandom.randomSelect(TH17Data.getInstance().getPlayers()).randomType();
+            case "东方虹龙洞", "th18", "UM" -> SJFRandom.randomSelect(TH18Data.getInstance().getPlayers()).randomType();
+            case "东方文花帖", "th9.5", "StB", "东方文花帖DS", "th12.5", "DS", "妖精大战争", "th12.8", "弹幕天邪鬼",
+                 "th14.3", "ISC", "秘封噩梦日记", "th16.5", "VD" -> "就一个飞机你roll你🐴呢";
+            default -> "只有2un飞机游戏";
+        };
     }
 
     public static String randomGame(String pname, long fromQQ, boolean goodAt) {
@@ -347,13 +272,13 @@ public class THGameDataManager {
         }
         for (THGameData game : thGameData) {
             if (text.equals(game.getNameCN())) {
-                return game.getNameEng(); 
+                return game.getNameEng();
             }
             if (text.equals(game.getNameEng())) {
-                return game.getNameCN(); 
+                return game.getNameCN();
             }
             if (text.equals(game.getNameAbbr())) {
-                return game.getNameFull(); 
+                return game.getNameFull();
             }
             for (THMusic mu : game.getMusics()) {
                 String muCN = mu.getNameCN();

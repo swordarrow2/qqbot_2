@@ -63,7 +63,7 @@ public class ModuleManager extends BaseModule implements IGroupEvent, INudgeEven
 
         // load(MusicRecongnition.class);
         load(BlackHistory.class);
-//        load(SetuManager.class);
+        load(SetuManager.class);
         load(Report.class);
 
         load(IDCalculate.class);
@@ -153,8 +153,6 @@ public class ModuleManager extends BaseModule implements IGroupEvent, INudgeEven
                 return true;
             }
         }
-
-        Person personFromQQ = configManager.getPersonFromQQ(qqId);
         for (IGroupMessageEvent m : groupMsgHandlers) {
             String name = m.getClass().getName();
             if (hotFix.containsKey(name)) {

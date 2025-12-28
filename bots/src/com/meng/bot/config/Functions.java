@@ -29,7 +29,7 @@ public enum Functions {
     // @SerializedName("x") EuropeDogs("欧洲狗识别"),
     @SerializedName("y") ImageProcess("图片处理"),
     @SerializedName("z") BilibiliTip("哔哩哔哩提示"),
-    // @SerializedName("aa") ACGImages("色图"),
+    @SerializedName("aa") ACGImages("色图"),
     //@SerializedName("ab") PersonalConfig("个人设置"),
     @SerializedName("ac") FileAnalyzer("文件分析"),
     //@SerializedName("ad") GrayImage("灰度图"),
@@ -37,8 +37,9 @@ public enum Functions {
     @SerializedName("ad") MusicRecongnition("原曲认知"),
     @SerializedName("ae") Aphorism("名言警句"),
     //    @SerializedName("af") HonKai3("崩坏三角色介绍"),
-    @SerializedName("ag") OllamaAI("ollama")
-    ;
+    @SerializedName("ag") BlackHistory("迫害图"),
+    @SerializedName("ah") Dummy("dummy"),
+    @SerializedName("ai") OllamaAI("ollama");
 
     private Functions(String s) {
         this.name = s;

@@ -41,10 +41,6 @@ public class CoinsManager extends BaseModule implements IGroupMessageEvent {
             return false;
         }
         long qqId = event.getSender().getId();
-        if (Command.getCommand(msg) == Command.Jrrp) {
-            sendMessage(event.getGroup(), String.format("%s今天会在%s疮痍", configManager.getNickName(groupId, qqId), THGameDataManager.hashRandomSpell(qqId).cnName));
-            return true;
-        }
         UserInfoManager uf = UserInfoManager.getInstance();
         ArrayList<String> list = TextLexer.analyze(msg);
         Iterator<String> iterator = list.iterator();
