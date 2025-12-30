@@ -1,6 +1,5 @@
 package com.meng.bot.qq.modules;
 
-import com.meng.bot.config.Person;
 import com.meng.bot.qq.BaseModule;
 import com.meng.bot.qq.BotWrapper;
 import com.meng.bot.qq.command.Command;
@@ -8,26 +7,70 @@ import com.meng.bot.qq.handler.group.IGroupMessageEvent;
 import com.meng.bot.qq.handler.group.INudgeEvent;
 import com.meng.tools.sjf.SJFPathTool;
 
+import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.List;
 
 import net.mamoe.mirai.contact.NormalMember;
-import net.mamoe.mirai.contact.Stranger;
 import net.mamoe.mirai.event.events.GroupMessageEvent;
 import net.mamoe.mirai.event.events.NudgeEvent;
 import net.mamoe.mirai.message.data.MessageChain;
 import org.jetbrains.annotations.Nullable;
+import org.jfree.chart.ChartFactory;
+import org.jfree.chart.JFreeChart;
+import org.jfree.chart.StandardChartTheme;
+import org.jfree.chart.plot.CategoryPlot;
+import org.jfree.chart.plot.PlotOrientation;
+import org.jfree.chart.renderer.category.BarRenderer;
+import org.jfree.data.category.CategoryDataset;
+import org.jfree.data.category.DefaultCategoryDataset;
+
+import javax.imageio.ImageIO;
 
 public class ChatCounter extends BaseModule implements IGroupMessageEvent, INudgeEvent {
 
     private Connection connection = null;
     private static final String Drivde = "org.sqlite.JDBC";
+
+    /**
+     * 获取指定群号的最近100条聊天记录
+     *
+     * @param groupId 群号
+     * @return 包含最近100条聊天记录的List，每个元素是一个包含时间、QQ号和消息内容的字符串
+     */
+    public List<String> getRecent100ChatRecords(long groupId) {
+        List<String> chatRecords = new ArrayList<>();
+        try {
+            Statement statement = connection.createStatement();
+            ResultSet resultSet = statement.executeQuery(
+                    String.format("SELECT sendTime, qq, sentence FROM g%d ORDER BY sendTime DESC LIMIT 100", groupId)
+            );
+            while (resultSet.next()) {
+                long sendTime = resultSet.getLong("sendTime");
+                long qq = resultSet.getLong("qq");
+                String sentence = resultSet.getString("sentence");
+                String record = String.format("[%s] QQ:%d -> %s", new Date(sendTime), qq, sentence);
+                chatRecords.add(record);
+            }
+            resultSet.close();
+            statement.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return chatRecords;
+    }
 
     @Override
     public boolean onGroupMessage(GroupMessageEvent event) {
@@ -45,8 +88,13 @@ public class ChatCounter extends BaseModule implements IGroupMessageEvent, INudg
             } else if (content.startsWith("查看群统计 ")) {
                 String text = content.substring("查看群统计 ".length());
                 sendGroupMessage(gid, processCommand(gid, text));
+            } else if (content.equals("查看最近发言")) {
+                BufferedImage chartImage = generateWeeklyChatChart(event.getGroup().getId());
+                if (chartImage != null) {
+                    sendMessage(event.getGroup(), botWrapper.toImage(bufferedImageToBytes(chartImage), event.getGroup()));
+                }
             }
-        } catch (SQLException e) {
+        } catch (Exception e) {
             sendGroupMessage(gid, e.toString());
             e.printStackTrace();
         }
@@ -66,9 +114,7 @@ public class ChatCounter extends BaseModule implements IGroupMessageEvent, INudg
                 contains++;
             }
         }
-        StringBuilder stringBuilder = new StringBuilder();
-        stringBuilder.append("包含:\n").append(contains).append("\n完全相同:\n").append(equals);
-        return stringBuilder.toString();
+        return "包含:\n" + contains + "\n完全相同:\n" + equals;
     }
 
     @Nullable
@@ -108,6 +154,159 @@ public class ChatCounter extends BaseModule implements IGroupMessageEvent, INudg
                     .append("(").append(qq).append(")").append("-").append(obj.getValue().nudge).append("次");
         }
         return stringBuilder.toString();
+    }
+
+    public BufferedImage generateWeeklyChatChart(long groupId) {
+        setChineseChartTheme();
+        try {
+            DefaultCategoryDataset dataset = new DefaultCategoryDataset();
+            Map<String, Integer> dailyCounts = getWeeklyChatCounts(groupId);
+            LocalDate today = LocalDate.now();
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM-dd");
+            for (int i = 6; i >= 0; i--) {
+                LocalDate date = today.minusDays(i);
+                String dateStr = date.format(formatter);
+                String dateKey = date.toString();
+                int count = dailyCounts.getOrDefault(dateKey, 0);
+                dataset.addValue(count, "发言数量", dateStr);
+            }
+            JFreeChart chart = ChartFactory.createBarChart(
+                    "群 " + groupId + " 最近一周发言统计", // 图表标题
+                    "日期",                            // X轴标签
+                    "发言数量",                        // Y轴标签
+                    dataset,                          // 数据集
+                    PlotOrientation.VERTICAL,         // 方向
+                    true,                            // 包含图例
+                    true,                            // 显示工具提示
+                    false                            // 不显示URL
+            );
+//            chart.setAntiAlias(true);
+            customizeChart(chart);
+            return chart.createBufferedImage(1440, 720);
+        } catch (Exception e) {
+            e.printStackTrace();
+            sendGroupMessage(groupId, e.toString());
+            return null;
+        }
+    }
+
+    private Font getChineseFont() {
+        String[] fontNames = {"Microsoft YaHei", "SimHei", "SimSun", "STSong", "STKaiti", "FangSong"};
+        for (String fontName : fontNames) {
+            try {
+                Font font = new Font(fontName, Font.PLAIN, 12);
+                if (font.getName().contains(fontName)) {
+                    return font;
+                }
+            } catch (Exception e) {
+                // 继续尝试下一个字体
+            }
+        }
+        return new Font("Serif", Font.PLAIN, 12);
+    }
+
+    private void customizeChart(JFreeChart chart) {
+        CategoryPlot plot = chart.getCategoryPlot();
+        BarRenderer renderer = (BarRenderer) plot.getRenderer();
+        renderer.setSeriesPaint(0, new Color(79, 129, 189)); // 设置柱状图颜色
+        plot.setBackgroundPaint(Color.WHITE);
+        plot.setDomainGridlinePaint(Color.LIGHT_GRAY);
+        plot.setRangeGridlinePaint(Color.LIGHT_GRAY);
+        renderer.setItemMargin(0.2);
+        Font axisFont = getChineseFont();
+        plot.getDomainAxis().setLabelFont(axisFont.deriveFont(Font.PLAIN, 14));
+        plot.getRangeAxis().setLabelFont(axisFont.deriveFont(Font.PLAIN, 14));
+        plot.getDomainAxis().setTickLabelFont(axisFont.deriveFont(Font.PLAIN, 12));
+        plot.getRangeAxis().setTickLabelFont(axisFont.deriveFont(Font.PLAIN, 12));
+        Font legendFont = getChineseFont();
+        chart.getLegend().setItemFont(legendFont.deriveFont(Font.PLAIN, 12));
+        renderer.setDefaultItemLabelGenerator(new org.jfree.chart.labels.CategoryItemLabelGenerator() {
+            @Override
+            public String generateRowLabel(CategoryDataset dataset, int row) {
+                return null;
+            }
+
+            @Override
+            public String generateColumnLabel(CategoryDataset dataset, int column) {
+                return null;
+            }
+
+            @Override
+            public String generateLabel(CategoryDataset dataset, int row, int column) {
+                Number value = dataset.getValue(row, column);
+                if (value != null) {
+                    return String.valueOf(value.intValue());
+                }
+                return "";
+            }
+        });
+        renderer.setDefaultItemLabelsVisible(true);
+        Font valueFont = getChineseFont();
+        renderer.setDefaultItemLabelFont(valueFont.deriveFont(Font.PLAIN, 11));
+    }
+
+    private void setChineseChartTheme() {
+        Font chineseFont = null;
+        try {
+            String[] fontNames = {"Microsoft YaHei", "SimHei", "SimSun", "STSong"};
+            for (String fontName : fontNames) {
+                Font font = new Font(fontName, Font.PLAIN, 12);
+                if (font.getName().contains(fontName)) {
+                    chineseFont = font;
+                    break;
+                }
+            }
+        } catch (Exception e) {
+            chineseFont = new Font("Serif", Font.PLAIN, 12);
+        }
+        StandardChartTheme chartTheme = new StandardChartTheme("CN");
+        if (chineseFont != null) {
+            chartTheme.setExtraLargeFont(chineseFont.deriveFont(Font.BOLD, 20));
+            chartTheme.setLargeFont(chineseFont.deriveFont(Font.BOLD, 16));
+            chartTheme.setRegularFont(chineseFont.deriveFont(Font.PLAIN, 14));
+            chartTheme.setSmallFont(chineseFont.deriveFont(Font.PLAIN, 12));
+        }
+        ChartFactory.setChartTheme(chartTheme);
+    }
+
+    /**
+     * 获取指定群组最近一周每天的发言数量
+     *
+     * @param groupId 群号
+     * @return Map<日期字符串, 发言数量>
+     */
+    private Map<String, Integer> getWeeklyChatCounts(long groupId) throws SQLException {
+        Map<String, Integer> dailyCounts = new HashMap<>();
+        // 计算一周前的时间戳（毫秒）
+        long oneWeekAgo = System.currentTimeMillis() - (7 * 24 * 60 * 60 * 1000L);
+        String sql = String.format(
+                "SELECT date(datetime(sendTime/1000, 'unixepoch')) as day, COUNT(*) as count " +
+                        "FROM g%d " +
+                        "WHERE sendTime >= %d " +
+                        "GROUP BY day " +
+                        "ORDER BY day",
+                groupId, oneWeekAgo
+        );
+        try (Statement statement = connection.createStatement();
+             ResultSet resultSet = statement.executeQuery(sql)) {
+            while (resultSet.next()) {
+                String day = resultSet.getString("day");
+                int count = resultSet.getInt("count");
+                dailyCounts.put(day, count);
+            }
+        }
+        return dailyCounts;
+    }
+
+    public byte[] bufferedImageToBytes(BufferedImage image) throws IOException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        ImageIO.write(image, "png", baos);
+        return baos.toByteArray();
+    }
+
+    public BufferedImage bytesToBufferedImage(byte[] imageBytes) throws IOException {
+        ByteArrayInputStream bais = new ByteArrayInputStream(imageBytes);
+        return ImageIO.read(bais);
     }
 
     public ChatCounter(BotWrapper botHelper) {
@@ -185,34 +384,6 @@ public class ChatCounter extends BaseModule implements IGroupMessageEvent, INudg
         return new GroupChatInfo(groupBean, map);
     }
 
-    private NudgeBean analyzeNudge(String nu) {
-        //NudgeEvent(from=NormalMember(1594703250), target=Bot(1975465607), subject=Group(666247478), action=戳了戳, suffix=)
-        String regex = "[0-9]{5,12}";
-        Pattern pattern = Pattern.compile(regex);
-        Matcher matcher = pattern.matcher(nu);
-        ArrayList<String> list = new ArrayList<>();
-        while (matcher.find()) {
-            list.add(matcher.group());
-        }
-        try {
-            return new NudgeBean(Long.parseLong(list.get(0)), Long.parseLong(list.get(1)), Long.parseLong(list.get(2)));
-        } catch (Exception e) {
-            return null;
-        }
-    }
-
-    private static class NudgeBean {
-        public final long group;
-        public final long from;
-        public final long target;
-
-        public NudgeBean(long group, long from, long target) {
-            this.group = group;
-            this.from = from;
-            this.target = target;
-        }
-    }
-
     private static class GroupChatInfo {
         public CountBean groupCount;
         public HashMap<Long, CountBean> hashMap;
@@ -223,7 +394,7 @@ public class ChatCounter extends BaseModule implements IGroupMessageEvent, INudg
         }
     }
 
-    private class CountBean {
+    private static class CountBean {
         int sentence = 0;
         int nudge = 0;
     }
