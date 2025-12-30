@@ -5,7 +5,7 @@ import com.meng.tools.normal.JSON;
 
 import java.util.Objects;
 
-public final class Person {
+public final class Person implements Comparable<Person> {
 
     public String name = "";
     public long qq;
@@ -28,6 +28,11 @@ public final class Person {
         this.name = name;
         this.qq = qq;
         this.bid = bid;
+    }
+
+    @Override
+    public int compareTo(Person other) {
+        return Long.compare(this.qq, other.qq);
     }
 
     public boolean hasOwnerPermission() {

@@ -1,13 +1,11 @@
 package com.meng.bot.qq.modules;
 
-import com.meng.api.touhou.THGameDataManager;
 import com.meng.bot.annotation.CommandDescribe;
 import com.meng.bot.config.Functions;
 import com.meng.bot.qq.BaseModule;
 import com.meng.bot.qq.BotWrapper;
 import com.meng.bot.qq.command.Command;
 import com.meng.bot.qq.command.SecondaryCommand;
-import com.meng.bot.qq.commonModules.UserInfoManager;
 import com.meng.bot.qq.handler.group.IGroupMessageEvent;
 import com.meng.tools.normal.ExceptionCatcher;
 import com.meng.tools.normal.TextLexer;

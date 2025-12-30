@@ -68,7 +68,8 @@ public class AdminMessage extends BaseModule implements IGroupMessageEvent {
                 sendMessage(event.getGroup(), moduleManager.getFunction());
                 return true;
             }
-            if (!configManager.getPersonFromQQ(qq).hasAdminPermission() && botWrapper.getGroupMember(groupId, qq).getPermission().getLevel() == 0) {
+            Person person = configManager.getPersonFromQQ(qq);
+            if (person != null && !person.hasAdminPermission() && botWrapper.getGroupMember(groupId, qq).getPermission().getLevel() == 0) {
 //                throw new SJFPermissionDeniedException(event);
                 return false;
             }
@@ -186,12 +187,12 @@ public class AdminMessage extends BaseModule implements IGroupMessageEvent {
             }
             //below bot admin or group master forbid
 
-            if (!configManager.getPersonFromQQ(qq).hasAdminPermission() && botWrapper.getGroupMember(groupId, qq).getPermission().getLevel() != 2) {
+            if (person != null && !person.hasAdminPermission() && botWrapper.getGroupMember(groupId, qq).getPermission().getLevel() != 2) {
 //                throw new SJFPermissionDeniedException(event);
                 return false;
             }
             //below bot master forbid
-            if (!configManager.getPersonFromQQ(qq).hasMasterPermission()) {
+            if (person != null && !person.hasMasterPermission()) {
 //                throw new SJFPermissionDeniedException(event);
                 return false;
             }
@@ -328,7 +329,7 @@ public class AdminMessage extends BaseModule implements IGroupMessageEvent {
                 }
             }
             //only owner
-            if (!configManager.getPersonFromQQ(qq).hasOwnerPermission()) {
+            if (person != null && !person.hasOwnerPermission()) {
 //                throw new SJFPermissionDeniedException(event);
                 return false;
             }

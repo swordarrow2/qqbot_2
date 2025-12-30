@@ -42,9 +42,8 @@ public class QqBotMain {
         if (isLoaded) {
             return;
         }
-
         try {
-            accountInfo = JSON.fromJson(FileTool.readString(new File("C://sanae_data/sjf.json")), AccountInfo.class);
+            accountInfo = JSON.fromJson(FileTool.readString(new File(SJFPathTool.getAppDirectory() + "sjf.json")), AccountInfo.class);
         } catch (IOException e) {
             e.printStackTrace();
             return;
@@ -55,29 +54,30 @@ public class QqBotMain {
                 .token(account.token)
                 .connect();
         System.out.println("connected.");
-        BotWrapper botHelper = new BotWrapper();
-        botHelper.setBot(bot);
+        BotWrapper botWrapper = new BotWrapper();
+        botWrapper.setBot(bot);
 
         ModuleManager moduleManager = new ModuleManager();
         BotMessageHandler botMessageHandler = new BotMessageHandler();
         ConfigManager configManager = new ConfigManager();
 
-        botHelper.setBotMessageHandler(botMessageHandler);
-        botHelper.setModuleManager(moduleManager);
-        botHelper.setConfigManager(configManager);
+        botWrapper.setBotMessageHandler(botMessageHandler);
+        botWrapper.setModuleManager(moduleManager);
+        botWrapper.setConfigManager(configManager);
 
-        botMessageHandler.setBotWrapper(botHelper);
-        configManager.setBotHelper(botHelper);
-        moduleManager.setBotHelper(botHelper);
+        botMessageHandler.setBotWrapper(botWrapper);
+        configManager.setBotHelper(botWrapper);
+        moduleManager.setBotHelper(botWrapper);
 
 
         bot.getEventChannel().registerListenerHost(botMessageHandler);
         bot.login();
 
-        botWrappers.put(bot, botHelper);
+        botWrappers.put(bot, botWrapper);
         SJFExecutors.execute(() -> bot.join());
 
-        TimeTask.getInstance().addTask(0, 0, () -> FileTool.deleteFiles(SJFPathTool.getTempPath("")));
+        TimeTask.getInstance(botWrapper).addTask(0, 0, () -> FileTool.deleteFiles(SJFPathTool.getTempPath("")));
+        SJFExecutors.execute(TimeTask.getInstance());
         isLoaded = true;
 
         //        SJFExecutors.executeAfterTime(new Runnable(){

@@ -8,7 +8,6 @@ import com.meng.bot.config.DataPersistenter;
 import com.meng.bot.config.Functions;
 import com.meng.bot.qq.BaseModule;
 import com.meng.bot.qq.BotWrapper;
-import com.meng.bot.qq.commonModules.UserInfoManager;
 import com.meng.bot.qq.handler.group.IGroupMessageEvent;
 import com.meng.bot.qq.handler.group.INudgeEvent;
 import com.meng.tools.normal.ExceptionCatcher;

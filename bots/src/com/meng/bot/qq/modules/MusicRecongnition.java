@@ -5,7 +5,6 @@ import com.meng.bot.qq.BaseModule;
 import com.meng.bot.qq.BotWrapper;
 import com.meng.bot.qq.command.Command;
 import com.meng.bot.qq.command.SecondaryCommand;
-import com.meng.bot.qq.commonModules.UserInfoManager;
 import com.meng.bot.qq.handler.group.IGroupMessageEvent;
 import com.meng.tools.normal.CmdExecuter;
 import com.meng.tools.normal.ExceptionCatcher;
@@ -15,8 +14,6 @@ import com.meng.tools.sjf.SJFRandom;
 import com.meng.tools.normal.TextLexer;
 
 import java.io.File;
-import java.io.FileFilter;
-import java.io.FilenameFilter;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;

@@ -10,7 +10,6 @@ import com.meng.bot.qq.BotWrapper;
 import com.meng.bot.qq.Personality;
 import com.meng.bot.qq.command.Command;
 import com.meng.bot.qq.command.SecondaryCommand;
-import com.meng.bot.qq.commonModules.UserInfoManager;
 import com.meng.bot.qq.handler.group.IGroupMessageEvent;
 import com.meng.tools.normal.ExceptionCatcher;
 import com.meng.tools.sjf.SJFPathTool;

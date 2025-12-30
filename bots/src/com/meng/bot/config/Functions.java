@@ -12,7 +12,7 @@ public enum Functions {
     @SerializedName("g") MemberLeaveEvent("群员退群"),
     @SerializedName("h") Dice("骰子"),
     @SerializedName("i") DynamicWordStock("词库"),
-    // @SerializedName("j") GroupCounterChart("群统计"),
+      @SerializedName("j") GroupCounterChart("群统计"),
 //    @SerializedName("k") BilibiliVideo("哔哩哔哩"),
     //@SerializedName("l") Morning("早"),
     @SerializedName("m") NumberProcess("数字计算"),

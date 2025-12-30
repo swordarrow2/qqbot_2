@@ -5,37 +5,69 @@ import com.meng.tools.sjf.SJFRandom;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
+import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
+import java.awt.image.WritableRaster;
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.stream.IntStream;
 
 public class ImageFactory {
+    private static volatile ImageFactory instance;
 
-    private static final ImageFactory instance = new ImageFactory();
-
-    public static final int GENERATE_FLAG_FLIP = 0;
-    public static final int GENERATE_FLAG_UPSIDE_DOWN = 1;
-    public static final int GENERATE_FLAG_SEIJA = 2;
+    private final Map<String, BufferedImage> templateCache = new ConcurrentHashMap<>();
 
     public static ImageFactory getInstance() {
+        if (instance == null) {
+            synchronized (ImageFactory.class) {
+                if (instance == null) {
+                    instance = new ImageFactory();
+                }
+            }
+        }
         return instance;
     }
 
-    public BufferedImage generateGray(BufferedImage img) {
-        for (int i = 0; i < img.getWidth(); i++) {
-            for (int j = 0; j < img.getHeight(); j++) {
-                int col = img.getRGB(i, j);
-                int alpha = col & 0xFF000000;
-                int R = (col & 0x00FF0000) >> 16;
-                int G = (col & 0x0000FF00) >> 8;
-                int B = (col & 0x000000FF);
-                //  int Y = (int)(R * 0.299 + G * 0.587 + B * 0.114);
-                int Y = ((66 * R + 129 * G + 25 * B + 128) >> 8) + 16;
-                int newColor = alpha | (Y << 16) | (Y << 8) | Y;
-                img.setRGB(i, j, newColor);
-            }
+    private ImageFactory() {
+        ExecutorService executor = Executors.newFixedThreadPool(4);
+        for (String template : new String[]{
+                "精神支柱.png",
+                "神触.png",
+                "小画家.png",
+                "继续干活.png",
+                "我永远喜欢.png",
+                "发癫.png",
+                "不可以见面.png",
+                "在想.png",
+                "抱紧.png"}) {
+            executor.submit(() -> getTemplateImage(template));
         }
-        return img;
+        executor.shutdown();
+    }
+
+    public BufferedImage generateGray(BufferedImage img) {
+        int width = img.getWidth();
+        int height = img.getHeight();
+        BufferedImage grayImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+        int[] pixels = new int[width * height];
+        img.getRGB(0, 0, width, height, pixels, 0, width);
+        IntStream.range(0, pixels.length).parallel().forEach(i -> {
+            int col = pixels[i];
+            int alpha = col & 0xFF000000;
+            int r = (col >> 16) & 0xFF;
+            int g = (col >> 8) & 0xFF;
+            int b = col & 0xFF;
+            int gray = (r * 77 + g * 150 + b * 29 + 128) >> 8;
+            pixels[i] = alpha | (gray << 16) | (gray << 8) | gray;
+        });
+        grayImage.setRGB(0, 0, width, height, pixels, 0, width);
+        return grayImage;
     }
 
     public float[] RGBToYUV(int R, int G, int B) {
@@ -54,119 +86,99 @@ public class ImageFactory {
         };
     }
 
-    public BufferedImage generateJingShenZhiZhu(BufferedImage src) {
-        try {
-            BufferedImage des1 = scaleImage(generateRotateImage(src, 346), 190);
-            Image im = ImageIO.read(SJFPathTool.getBaseImagePath("精神支柱.png"));
-            BufferedImage b = new BufferedImage(im.getWidth(null), im.getHeight(null), BufferedImage.TYPE_INT_ARGB);
-            Graphics2D graphics2D = b.createGraphics();
-            graphics2D.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            graphics2D.drawImage(im, 0, 0, null);
-            graphics2D.drawImage(des1, -29, 30, null);
+    private BufferedImage getTemplateImage(String name) {
+        return templateCache.computeIfAbsent(name, key -> {
+            try {
+                return ImageIO.read(SJFPathTool.getBaseImagePath(key));
+            } catch (IOException e) {
+                e.printStackTrace();
+                return null;
+            }
+        });
+    }
 
-            return b;
-        } catch (IOException e) {
-            return null;
-        }
+    public BufferedImage generateJingShenZhiZhu(BufferedImage src) {
+        BufferedImage des1 = scaleImage(generateRotateImage(src, 346), 190);
+        Image im = getTemplateImage("精神支柱.png");
+        BufferedImage b = new BufferedImage(im.getWidth(null), im.getHeight(null), BufferedImage.TYPE_INT_ARGB);
+        Graphics2D graphics2D = b.createGraphics();
+        graphics2D.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        graphics2D.drawImage(im, 0, 0, null);
+        graphics2D.drawImage(des1, -29, 30, null);
+        return b;
     }
 
     public BufferedImage generateShenChu(BufferedImage src) {
-        try {
-            BufferedImage des1 = new BufferedImage(228, 228, BufferedImage.TYPE_INT_ARGB);
-            des1.getGraphics().drawImage(src, 0, 0, 228, 228, null);
-            Image im = ImageIO.read(SJFPathTool.getBaseImagePath("神触.png"));
-            BufferedImage b = new BufferedImage(im.getWidth(null), im.getHeight(null), BufferedImage.TYPE_INT_ARGB);
-            b.getGraphics().drawImage(im, 0, 0, null);
-            b.getGraphics().drawImage(des1, 216, -20, null);
-            return b;
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
-        }
+        BufferedImage des1 = new BufferedImage(228, 228, BufferedImage.TYPE_INT_ARGB);
+        des1.getGraphics().drawImage(src, 0, 0, 228, 228, null);
+        Image im = getTemplateImage("神触.png");
+        BufferedImage b = new BufferedImage(im.getWidth(null), im.getHeight(null), BufferedImage.TYPE_INT_ARGB);
+        b.getGraphics().drawImage(im, 0, 0, null);
+        b.getGraphics().drawImage(des1, 216, -20, null);
+        return b;
     }
 
     public BufferedImage generateXiaoHuaJia(BufferedImage src) {
-        try {
-            BufferedImage des1 = scaleImage(src, 345);
-            Image im = ImageIO.read(SJFPathTool.getBaseImagePath("小画家.png"));
-            BufferedImage b = new BufferedImage(im.getWidth(null), im.getHeight(null), BufferedImage.TYPE_INT_ARGB);
-            b.getGraphics().drawImage(des1, 73, 91, null);
-            b.getGraphics().drawImage(im, 0, 0, null);
-
-            return b;
-        } catch (IOException e) {
-            return null;
-        }
+        BufferedImage des1 = scaleImage(src, 345);
+        Image im = getTemplateImage("小画家.png");
+        BufferedImage b = new BufferedImage(im.getWidth(null), im.getHeight(null), BufferedImage.TYPE_INT_ARGB);
+        b.getGraphics().drawImage(des1, 73, 91, null);
+        b.getGraphics().drawImage(im, 0, 0, null);
+        return b;
     }
 
     public BufferedImage generateJiXuGanHuo(BufferedImage src) {
-        try {
-            BufferedImage des1 = scaleImage(generateRotateImage(src, 343), 400);
-            Image im = ImageIO.read(SJFPathTool.getBaseImagePath("继续干活.png"));
-            BufferedImage b = new BufferedImage(im.getWidth(null), im.getHeight(null), BufferedImage.TYPE_INT_ARGB);
-            b.getGraphics().drawImage(des1, 30, 35, null);
-            b.getGraphics().drawImage(im, 0, 0, null);
-            return b;
-        } catch (IOException e) {
-            return null;
-        }
+        BufferedImage des1 = scaleImage(generateRotateImage(src, 343), 400);
+        Image im = getTemplateImage("继续干活.png");
+        BufferedImage b = new BufferedImage(im.getWidth(null), im.getHeight(null), BufferedImage.TYPE_INT_ARGB);
+        b.getGraphics().drawImage(des1, 30, 35, null);
+        b.getGraphics().drawImage(im, 0, 0, null);
+        return b;
     }
 
     public BufferedImage generateWoYongYuanXiHuan(BufferedImage src, String str) {
-        try {
-            BufferedImage transactedSrc = scaleImage(src, 400);
-            Image im = ImageIO.read(SJFPathTool.getBaseImagePath("我永远喜欢.png"));
-            BufferedImage b = new BufferedImage(im.getWidth(null), im.getHeight(null), BufferedImage.TYPE_INT_ARGB);
-            Graphics2D graphics = b.createGraphics();
-            graphics.drawImage(im, 0, 0, null);
-            graphics.drawImage(transactedSrc, 15, 93, null);
-            graphics.setColor(Color.black);
-            Font ft1 = new Font("黑体", Font.PLAIN, 40);
-            graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            graphics.setFont(ft1);
-            graphics.drawString("我永远喜欢", 500, 500);
-            graphics.drawString(str, 500, 560);
-            return b;
-        } catch (IOException e) {
-            return null;
-        }
+        BufferedImage transactedSrc = scaleImage(src, 400);
+        Image im = getTemplateImage("我永远喜欢.png");
+        BufferedImage b = new BufferedImage(im.getWidth(null), im.getHeight(null), BufferedImage.TYPE_INT_ARGB);
+        Graphics2D graphics = b.createGraphics();
+        graphics.drawImage(im, 0, 0, null);
+        graphics.drawImage(transactedSrc, 15, 93, null);
+        graphics.setColor(Color.black);
+        Font ft1 = new Font("黑体", Font.PLAIN, 40);
+        graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        graphics.setFont(ft1);
+        graphics.drawString("我永远喜欢", 500, 500);
+        graphics.drawString(str, 500, 560);
+        return b;
     }
 
     public BufferedImage generateFaDian(BufferedImage src, String str) {
-        try {
-            BufferedImage transactedSrc = scaleImage(src, 90);
-            Image im = ImageIO.read(SJFPathTool.getBaseImagePath("发癫.png"));
-            BufferedImage b = new BufferedImage(im.getWidth(null), im.getHeight(null), BufferedImage.TYPE_INT_ARGB);
-            Graphics2D graphics = b.createGraphics();
-            graphics.drawImage(transactedSrc, 5, 17, null);
-            graphics.drawImage(im, 0, 0, null);
-            graphics.setColor(Color.black);
-            Font ft1 = new Font("黑体", Font.PLAIN, 20);
-            graphics.setFont(ft1);
-            graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            if (str.length() > 3) {
-                str = str.substring(str.length() - 3);
-            }
-            graphics.drawString(str + "...嘿嘿....", 40, 192);
-            graphics.drawString("我的" + str + "...", 40, 220);
-            return b;
-        } catch (IOException e) {
-            return null;
+        BufferedImage transactedSrc = scaleImage(src, 90);
+        Image im = getTemplateImage("发癫.png");
+        BufferedImage b = new BufferedImage(im.getWidth(null), im.getHeight(null), BufferedImage.TYPE_INT_ARGB);
+        Graphics2D graphics = b.createGraphics();
+        graphics.drawImage(transactedSrc, 5, 17, null);
+        graphics.drawImage(im, 0, 0, null);
+        graphics.setColor(Color.black);
+        Font ft1 = new Font("黑体", Font.PLAIN, 20);
+        graphics.setFont(ft1);
+        graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        if (str.length() > 5) {
+            str = str.substring(str.length() - 5);
         }
+        graphics.drawString(str + "...嘿嘿....", 40, 192);
+        graphics.drawString("我的" + str + "...", 40, 220);
+        return b;
     }
 
     public BufferedImage generateBuKeYiJianMian(BufferedImage src) {
-        try {
-            BufferedImage transactedSrc = scaleImage(src, 430);
-            Image im = ImageIO.read(SJFPathTool.getBaseImagePath("不可以见面.png"));
-            BufferedImage b = new BufferedImage(im.getWidth(null), im.getHeight(null), BufferedImage.TYPE_INT_ARGB);
-            Graphics graphics = b.getGraphics();
-            graphics.drawImage(transactedSrc, 40, 100, null);
-            graphics.drawImage(im, 0, 0, null);
-            return b;
-        } catch (IOException e) {
-            return null;
-        }
+        BufferedImage transactedSrc = scaleImage(src, 430);
+        Image im = getTemplateImage("不可以见面.png");
+        BufferedImage b = new BufferedImage(im.getWidth(null), im.getHeight(null), BufferedImage.TYPE_INT_ARGB);
+        Graphics graphics = b.getGraphics();
+        graphics.drawImage(transactedSrc, 40, 100, null);
+        graphics.drawImage(im, 0, 0, null);
+        return b;
     }
 
     public BufferedImage generatePa(BufferedImage src, String dummy) {
@@ -187,7 +199,7 @@ public class ImageFactory {
     public BufferedImage generateZaiXiang(BufferedImage src) {
         try {
             BufferedImage transactedSrc = scaleImage(src, 540);
-            Image im = ImageIO.read(SJFPathTool.getBaseImagePath("在想.png"));
+            Image im = getTemplateImage("在想.png");
             BufferedImage b = new BufferedImage(im.getWidth(null), im.getHeight(null), BufferedImage.TYPE_INT_ARGB);
             Graphics graphics = b.getGraphics();
             graphics.drawImage(transactedSrc, 530, 0, null);
@@ -199,86 +211,88 @@ public class ImageFactory {
     }
 
     public BufferedImage generateBaojin(BufferedImage src) {
-        try {
-
-
-            BufferedImage transactedSrc = scaleImage(src, 180);
-            Image im = ImageIO.read(SJFPathTool.getBaseImagePath("抱紧.png"));
-            BufferedImage b = new BufferedImage(im.getWidth(null), im.getHeight(null), BufferedImage.TYPE_INT_ARGB);
-            Graphics graphics = b.getGraphics();
-            graphics.drawImage(transactedSrc, 108, 200, null);
-            graphics.drawImage(im, 0, 0, null);
-            return b;
-        } catch (IOException e) {
-            return null;
-        }
-    }
-
-    public BufferedImage generateMirror(BufferedImage srcImage, int flag) {
-        Image im = srcImage;
-        int w = im.getWidth(null);
-        int h = im.getHeight(null);
-        int size = w * h;
+        BufferedImage transactedSrc = scaleImage(src, 180);
+        Image im = getTemplateImage("抱紧.png");
         BufferedImage b = new BufferedImage(im.getWidth(null), im.getHeight(null), BufferedImage.TYPE_INT_ARGB);
-        b.getGraphics().drawImage(im.getScaledInstance(w, h, Image.SCALE_SMOOTH), 0, 0, null);
-        int[] rgb1 = b.getRGB(0, 0, w, h, new int[size], 0, w);
-        int[] rgb2 = new int[size];
-        switch (flag % 3) {
-            case 0:
-                for (int y = 0; y < h; ++y) {
-                    int yw = y * w;
-                    for (int x = 0; x < w; ++x) {
-                        rgb2[(w - 1 - x) + yw] = rgb1[x + yw]; // 镜之国
-                    }
-                }
-                break;
-            case 1:
-                for (int y = 0; y < h; y++) {
-                    // 天地
-                    if (w >= 0) {
-                        System.arraycopy(rgb1, y * w, rgb2, (h - 1 - y) * w, w);
-                    }
-                }
-                break;
-            case 2:
-                int halfH = h / 2;
-                for (int y = 0; y < h; y++) {
-                    // 天壤梦弓
-                    if (w >= 0) {
-                        System.arraycopy(rgb1, y * w, rgb2, (y < halfH ? y + halfH : y - halfH) * w, w);
-                    }
-                }
-                break;
-        }
-        b.setRGB(0, 0, w, h, rgb2, 0, w);
+        Graphics graphics = b.getGraphics();
+        graphics.drawImage(transactedSrc, 108, 200, null);
+        graphics.drawImage(im, 0, 0, null);
         return b;
     }
 
-    public BufferedImage generateRotateImage(Image src, int angel) {
-        int srcWidth = src.getWidth(null);
-        int srcHeight = src.getHeight(null);
-        if (angel > 90) {
-            if (angel / 90 % 2 == 1) {
-                srcHeight = srcHeight ^ srcWidth;
-                srcWidth = srcHeight ^ srcWidth;
-                srcHeight = srcHeight ^ srcWidth;
-            }
+    public BufferedImage generateMirror(BufferedImage srcImage, int flag) {
+        int w = srcImage.getWidth();
+        int h = srcImage.getHeight();
+        int size = w * h;
+
+        int[] rgb1 = new int[size];
+        srcImage.getRGB(0, 0, w, h, rgb1, 0, w);
+        int[] rgb2 = new int[size];
+
+        switch (flag % 3) {
+            case 0: // 左右镜像
+                for (int y = 0; y < h; y++) {
+                    int srcPos = y * w;
+                    int destPos = srcPos + w - 1;
+                    for (int x = 0; x < w; x++) {
+                        rgb2[destPos - x] = rgb1[srcPos + x];
+                    }
+                }
+                break;
+            case 1: // 上下镜像
+                for (int y = 0; y < h; y++) {
+                    System.arraycopy(rgb1, y * w, rgb2, (h - 1 - y) * w, w);
+                }
+                break;
+            case 2: // 上下半部分交换
+                int halfH = h / 2;
+                int halfSize = halfH * w;
+                System.arraycopy(rgb1, 0, rgb2, halfSize, halfSize);
+                System.arraycopy(rgb1, halfSize, rgb2, 0, halfSize);
+                break;
         }
-        double r = Math.sqrt(srcHeight * srcHeight + srcWidth * srcWidth) / 2;
-        double len = 2 * Math.sin(Math.toRadians(angel % 90) / 2) * r;
-        double angelAlpha = (Math.PI - Math.toRadians(angel % 90)) / 2;
-        double angelDaltaWidth = Math.atan((double) srcHeight / srcWidth);
-        double angelDaltaHeight = Math.atan((double) srcWidth / srcHeight);
-        int lenDaltaWidth = (int) (len * Math.cos(Math.PI - angelAlpha - angelDaltaWidth));
-        int lenDaltaHeight = (int) (len * Math.cos(Math.PI - angelAlpha - angelDaltaHeight));
-        int desWidth = srcWidth + lenDaltaWidth * 2;
-        int desHeight = srcHeight + lenDaltaHeight * 2;
-        BufferedImage res = new BufferedImage(desWidth, desHeight, BufferedImage.TYPE_INT_ARGB);
-        Graphics2D g2 = res.createGraphics();
-        g2.translate((desWidth - srcWidth) / 2, (desHeight - srcHeight) / 2);
-        g2.rotate(Math.toRadians(angel), srcWidth / 2, srcHeight / 2);
-        g2.drawImage(src, null, null);
-        return res;
+
+        BufferedImage result = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
+        result.setRGB(0, 0, w, h, rgb2, 0, w);
+        return result;
+    }
+
+    public BufferedImage generateRotateImage(Image src, double angle) {
+        BufferedImage srcImage;
+        if (src instanceof BufferedImage) {
+            srcImage = (BufferedImage) src;
+        } else {
+            srcImage = new BufferedImage(src.getWidth(null), src.getHeight(null),
+                    BufferedImage.TYPE_INT_ARGB);
+            srcImage.getGraphics().drawImage(src, 0, 0, null);
+        }
+
+        // 计算旋转后的尺寸
+        double radians = Math.toRadians(angle);
+        double sin = Math.abs(Math.sin(radians));
+        double cos = Math.abs(Math.cos(radians));
+
+        int newWidth = (int) Math.floor(srcImage.getWidth() * cos + srcImage.getHeight() * sin);
+        int newHeight = (int) Math.floor(srcImage.getHeight() * cos + srcImage.getWidth() * sin);
+
+        BufferedImage result = new BufferedImage(newWidth, newHeight, srcImage.getType());
+        Graphics2D g2d = result.createGraphics();
+
+        // 设置渲染质量
+        g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION,
+                RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+
+        // 平移到中心旋转
+        AffineTransform transform = new AffineTransform();
+        transform.translate(newWidth / 2, newHeight / 2);
+        transform.rotate(radians);
+        transform.translate(-srcImage.getWidth() / 2, -srcImage.getHeight() / 2);
+
+        g2d.setTransform(transform);
+        g2d.drawImage(srcImage, 0, 0, null);
+        g2d.dispose();
+
+        return result;
     }
 
     public BufferedImage scaleImage(BufferedImage img, int newSize) {
@@ -290,21 +304,13 @@ public class ImageFactory {
     }
 
     public BufferedImage zoomByScale(BufferedImage img, double scale) throws IOException {
-
-        //获取缩放后的长和宽
         int _width = (int) (scale * img.getWidth(null));
         int _height = (int) (scale * img.getHeight(null));
-        //获取缩放后的Image对象
         Image _img = img.getScaledInstance(_width, _height, Image.SCALE_DEFAULT);
-        //新建一个和Image对象相同大小的画布
         BufferedImage image = new BufferedImage(_width, _height, BufferedImage.TYPE_INT_RGB);
-        //获取画笔
         Graphics2D graphics = image.createGraphics();
-        //将Image对象画在画布上,最后一个参数,ImageObserver:接收有关 Image 信息通知的异步更新接口,没用到直接传空
         graphics.drawImage(_img, 0, 0, null);
-        //释放资源
         graphics.dispose();
-        //使用ImageIO的方法进行输出,记得关闭资源
         return image;
     }
 

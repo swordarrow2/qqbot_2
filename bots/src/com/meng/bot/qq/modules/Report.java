@@ -5,7 +5,6 @@ import com.meng.bot.annotation.CommandDescribe;
 import com.meng.bot.config.Person;
 import com.meng.bot.qq.BaseModule;
 import com.meng.bot.qq.BotWrapper;
-import com.meng.bot.qq.commonModules.UserInfoManager;
 import com.meng.bot.qq.handler.group.IGroupMessageEvent;
 import com.meng.tools.normal.TimeFormater;
 import net.mamoe.mirai.event.events.GroupMessageEvent;

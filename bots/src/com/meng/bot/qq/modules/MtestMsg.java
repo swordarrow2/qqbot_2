@@ -50,13 +50,8 @@ public class MtestMsg extends BaseModule implements IGroupMessageEvent {
                 sendMessage(event, "已启用AI");
                 return true;
             }
-            if (msg.equals("exit")) {
-                onAI = false;
-                sendMessage(event, "已停用AI");
-                chatBotHashMap.remove(qqId);
-                return true;
-            }
             if (onAI) {
+                onAI = false;
                 SimpleChatBot bot = chatBotHashMap.get(qqId);
                 if (bot == null) {
                     bot = new SimpleChatBot("qwen3:4b", qqId);

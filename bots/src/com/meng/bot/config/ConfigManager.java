@@ -14,9 +14,9 @@ import net.mamoe.mirai.contact.NormalMember;
 import net.mamoe.mirai.contact.Stranger;
 
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Set;
+import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.function.Function;
 
 public class ConfigManager extends BaseModule {
@@ -218,7 +218,7 @@ public class ConfigManager extends BaseModule {
     }
 
     public Set<Person> getPersonbyCondition(Function<Person, Boolean> pms) {
-        Set<Person> persons = new HashSet<Person>();
+        Set<Person> persons = new TreeSet<Person>();
         for (Person p : configHolder.person) {
             if (pms.apply(p)) {
                 persons.add(p);
@@ -267,19 +267,19 @@ public class ConfigManager extends BaseModule {
 
     public static class ConfigHolder {
 
-        public HashMap<Long, QQGroupConfig> groupCfgs = new HashMap<>();
-        public HashSet<Long> blockOnlyQQ = new HashSet<>();
-        public HashSet<Long> blackQQ = new HashSet<>();
-        public HashSet<Long> blackGroup = new HashSet<>();
-        public HashSet<String> blockWord = new HashSet<>();
+        public TreeMap<Long, QQGroupConfig> groupCfgs = new TreeMap<>();
+        public TreeSet<Long> blockOnlyQQ = new TreeSet<>();
+        public TreeSet<Long> blackQQ = new TreeSet<>();
+        public TreeSet<Long> blackGroup = new TreeSet<>();
+        public TreeSet<String> blockWord = new TreeSet<>();
 
-        public HashSet<Long> owner = new HashSet<>();
-        public HashSet<Long> masters = new HashSet<>();
-        public HashSet<Long> admins = new HashSet<>();
-        public HashSet<Person> person = new HashSet<>();
-        public HashSet<Long> otherBots = new HashSet<>();
+        public TreeSet<Long> owner = new TreeSet<>();
+        public TreeSet<Long> masters = new TreeSet<>();
+        public TreeSet<Long> admins = new TreeSet<>();
+        public TreeSet<Person> person = new TreeSet<>();
+        public TreeSet<Long> otherBots = new TreeSet<>();
 
-        public HashMap<Long, String> nicknameMap = new HashMap<>();
-        public HashMap<Long, String> welcomeMap = new HashMap<>();
+        public TreeMap<Long, String> nicknameMap = new TreeMap<>();
+        public TreeMap<Long, String> welcomeMap = new TreeMap<>();
     }
 }

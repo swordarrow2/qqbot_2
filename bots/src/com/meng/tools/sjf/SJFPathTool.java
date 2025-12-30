@@ -6,8 +6,14 @@ import java.util.Date;
 
 public class SJFPathTool {
     public static String getAppDirectory() {
-        return "C://sanae_data/";
+        String os = System.getProperty("os.name").toLowerCase();
+        if (os.contains("win")) {
+            return "C://sanae_data/";
+        } else {
+            return "/media/devmon/drone/sanae_data/";
+        }
     }
+
 
     public static String getWordStockImagePath() {
         return getAppDirectory() + "/wordstock_image/";
@@ -16,7 +22,6 @@ public class SJFPathTool {
     public static File getWordStockImagePath(String fileName) {
         return new File(getWordStockImagePath() + fileName);
     }
-
 
     public static String getSystemDataPath() {
         return getAppDirectory() + "/system_data/";
