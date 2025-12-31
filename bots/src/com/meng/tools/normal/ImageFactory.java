@@ -262,36 +262,24 @@ public class ImageFactory {
         if (src instanceof BufferedImage) {
             srcImage = (BufferedImage) src;
         } else {
-            srcImage = new BufferedImage(src.getWidth(null), src.getHeight(null),
-                    BufferedImage.TYPE_INT_ARGB);
+            srcImage = new BufferedImage(src.getWidth(null), src.getHeight(null), BufferedImage.TYPE_INT_ARGB);
             srcImage.getGraphics().drawImage(src, 0, 0, null);
         }
-
-        // 计算旋转后的尺寸
         double radians = Math.toRadians(angle);
         double sin = Math.abs(Math.sin(radians));
         double cos = Math.abs(Math.cos(radians));
-
         int newWidth = (int) Math.floor(srcImage.getWidth() * cos + srcImage.getHeight() * sin);
         int newHeight = (int) Math.floor(srcImage.getHeight() * cos + srcImage.getWidth() * sin);
-
-        BufferedImage result = new BufferedImage(newWidth, newHeight, srcImage.getType());
+        BufferedImage result = new BufferedImage(newWidth, newHeight, BufferedImage.TYPE_INT_ARGB);
         Graphics2D g2d = result.createGraphics();
-
-        // 设置渲染质量
-        g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION,
-                RenderingHints.VALUE_INTERPOLATION_BILINEAR);
-
-        // 平移到中心旋转
+        g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
         AffineTransform transform = new AffineTransform();
-        transform.translate(newWidth / 2, newHeight / 2);
+        transform.translate(newWidth / 2.0, newHeight / 2.0);
         transform.rotate(radians);
-        transform.translate(-srcImage.getWidth() / 2, -srcImage.getHeight() / 2);
-
+        transform.translate(-srcImage.getWidth() / 2.0, -srcImage.getHeight() / 2.0);
         g2d.setTransform(transform);
         g2d.drawImage(srcImage, 0, 0, null);
         g2d.dispose();
-
         return result;
     }
 
@@ -313,5 +301,4 @@ public class ImageFactory {
         graphics.dispose();
         return image;
     }
-
 }
