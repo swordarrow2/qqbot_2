@@ -29,7 +29,7 @@ public class RepeaterManager extends BaseModule implements IGroupMessageEvent {
     }
 
     @Override
-    @CommandDescribe(cmd = "-", note = "复读机")
+    @CommandDescribe(cmd = "Repeater", note = "复读机")
     public boolean onGroupMessage(GroupMessageEvent event) {
         long groupId = event.getGroup().getId();
         if (!configManager.getGroupConfig(groupId).isFunctionEnabled(Functions.Repeater)) {

@@ -42,7 +42,7 @@ public class AdminMessage extends BaseModule implements IGroupMessageEvent {
     }
 
     @Override
-    @CommandDescribe(cmd = "-", note = "主要给管理员用的指令")
+    @CommandDescribe(cmd = "AdminMessage", note = "主要给管理员用的指令")
     public boolean onGroupMessage(GroupMessageEvent event) {
         long qq = event.getSender().getId();
         long groupId = event.getGroup().getId();

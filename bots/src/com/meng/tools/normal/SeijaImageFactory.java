@@ -9,64 +9,63 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 
 public class SeijaImageFactory {
     public static byte[] reverseGIF(File gifFile, int reverseFlag) throws FileNotFoundException {
-        GifDecoder gifDecoder = new GifDecoder();
+        GifDecoder decoder = new GifDecoder();
         FileInputStream fis = new FileInputStream(gifFile);
-        gifDecoder.read(fis);
+        decoder.read(fis);
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        AnimatedGifEncoder localAnimatedGifEncoder = new AnimatedGifEncoder();
-        BufferedImage cacheImage = gifDecoder.getFrame(0);
-//         int tw = cacheImage.getWidth(null) - 1;
-//         int th = cacheImage.getHeight(null) - 1;
-//         if (cacheImage.getRGB(0, 0) == 0 &&
-//         cacheImage.getRGB(tw, 0) == 0 &&
-//         cacheImage.getRGB(0, th) == 0 &&
-//         cacheImage.getRGB(tw, th) == 0) {
-//         localAnimatedGifEncoder.setTransparent(new Color(0, 0, 0, 0));
+        AnimatedGifEncoder encoder = new AnimatedGifEncoder();
+        BufferedImage bg = decoder.getFrame(0);
+//         int tw = bg.getWidth(null) - 1;
+//         int th = bg.getHeight(null) - 1;
+//         if (bg.getRGB(0, 0) == 0 &&
+//         bg.getRGB(tw, 0) == 0 &&
+//         bg.getRGB(0, th) == 0 &&
+//         bg.getRGB(tw, th) == 0) {
+//         encoder.setTransparent(new Color(0, 0, 0, 0));
 //         }
-        localAnimatedGifEncoder.start(baos);// start
-        localAnimatedGifEncoder.setRepeat(0);// 设置生成gif的开始播放时间。0为立即开始播放
-        float fa = (float) cacheImage.getHeight() / (gifDecoder.getFrameCount());
+        encoder.start(baos);// start
+        encoder.setRepeat(0);// 设置生成gif的开始播放时间。0为立即开始播放
+        float fa = (float) bg.getHeight() / (decoder.getFrameCount());
         switch (reverseFlag % 4) {
             case 0:// 镜之国
-                cacheImage = spell1(gifDecoder.getFrame(0));
-                for (int i = 0; i < gifDecoder.getFrameCount(); i++) {
-                    localAnimatedGifEncoder.setDelay(gifDecoder.getDelay(i));
-                    localAnimatedGifEncoder.addFrame(spell1(gifDecoder.getFrame(i), cacheImage));
+                bg = spell1(decoder.getFrame(0));
+                for (int i = 0; i < decoder.getFrameCount(); i++) {
+                    encoder.setDelay(decoder.getDelay(i));
+                    encoder.addFrame(spell1(decoder.getFrame(i), bg));
                 }
                 break;
             case 1:// 天地
-                cacheImage = spell2(gifDecoder.getFrame(0));
-                for (int i = 0; i < gifDecoder.getFrameCount(); i++) {
-                    localAnimatedGifEncoder.setDelay(gifDecoder.getDelay(i));
-                    localAnimatedGifEncoder.addFrame(spell2(gifDecoder.getFrame(i), cacheImage));
+                bg = spell2(decoder.getFrame(0));
+                for (int i = 0; i < decoder.getFrameCount(); i++) {
+                    encoder.setDelay(decoder.getDelay(i));
+                    encoder.addFrame(spell2(decoder.getFrame(i), bg));
                 }
                 break;
             case 2:// 天壤梦弓
-                for (int i = 0; i < gifDecoder.getFrameCount(); i++) {
-                    localAnimatedGifEncoder.setDelay(gifDecoder.getDelay(i));
-                    localAnimatedGifEncoder.addFrame(spell3(gifDecoder.getFrame(i), (int) (fa * (gifDecoder.getFrameCount() - i)), cacheImage));
+                for (int i = 0; i < decoder.getFrameCount(); i++) {
+                    encoder.setDelay(decoder.getDelay(i));
+                    encoder.addFrame(spell3(decoder.getFrame(i), (int) (fa * (decoder.getFrameCount() - i)), bg));
                 }
                 break;
             case 3:// Reverse Hierarchy
-                cacheImage = spell4(gifDecoder.getFrame(0));
-                for (int i = 0; i < gifDecoder.getFrameCount(); i++) {
-                    localAnimatedGifEncoder.setDelay(gifDecoder.getDelay(i));
-                    localAnimatedGifEncoder.addFrame(spell4(gifDecoder.getFrame(i), cacheImage));
+                bg = spell4(decoder.getFrame(0));
+                for (int i = 0; i < decoder.getFrameCount(); i++) {
+                    encoder.setDelay(decoder.getDelay(i));
+                    encoder.addFrame(spell4(decoder.getFrame(i), bg));
                 }
                 break;
         }
-        localAnimatedGifEncoder.finish();
+        encoder.finish();
         return baos.toByteArray();
     }
 
     private static BufferedImage spell1(BufferedImage current, BufferedImage cache) {
         int w = current.getWidth(null);
         int h = current.getHeight(null);
-        BufferedImage bmp = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
+        BufferedImage bmp = new BufferedImage(w, h, BufferedImage.TYPE_USHORT_565_RGB);
         bmp.getGraphics().drawImage(cache.getScaledInstance(w, h, Image.SCALE_SMOOTH), 0, 0, null);
         for (int y = 0; y < h; y++) {
             for (int x = 0; x < w; x++) {
@@ -81,7 +80,7 @@ public class SeijaImageFactory {
     private static BufferedImage spell1(BufferedImage current) {
         int w = current.getWidth(null);
         int h = current.getHeight(null);
-        BufferedImage bmp = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
+        BufferedImage bmp = new BufferedImage(w, h, BufferedImage.TYPE_USHORT_565_RGB);
         for (int y = 0; y < h; y++) {
             for (int x = 0; x < w; x++) {
                 int i = current.getRGB(x, y);
@@ -94,7 +93,7 @@ public class SeijaImageFactory {
     private static BufferedImage spell2(BufferedImage current, BufferedImage cache) {
         int w = current.getWidth(null);
         int h = current.getHeight(null);
-        BufferedImage bmp = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
+        BufferedImage bmp = new BufferedImage(w, h, BufferedImage.TYPE_USHORT_565_RGB);
         bmp.getGraphics().drawImage(cache.getScaledInstance(w, h, Image.SCALE_SMOOTH), 0, 0, null);
         for (int y = 0; y < h; y++) {
             for (int x = 0; x < w; x++) {
@@ -109,7 +108,7 @@ public class SeijaImageFactory {
     private static BufferedImage spell2(BufferedImage current) {
         int w = current.getWidth(null);
         int h = current.getHeight(null);
-        BufferedImage bmp = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
+        BufferedImage bmp = new BufferedImage(w, h, BufferedImage.TYPE_USHORT_565_RGB);
         for (int y = 0; y < h; y++) {
             for (int x = 0; x < w; x++) {
                 int i = current.getRGB(x, y);
@@ -119,50 +118,22 @@ public class SeijaImageFactory {
         return bmp;
     }
 
-    private static BufferedImage spell3(BufferedImage current, int px, BufferedImage cache) {
-        int w = current.getWidth(null);
-        int h = current.getHeight(null);
-        BufferedImage bmp = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
-        bmp.getGraphics().drawImage(spell3_at1(cache, px).getScaledInstance(w, h, Image.SCALE_SMOOTH), 0, 0, null);
-        spell3Process(current, px, w, h, bmp);
-        cache.getGraphics().drawImage(spell3_at1(bmp, -px).getScaledInstance(w, h, Image.SCALE_SMOOTH), 0, 0, null);
-        return bmp;
+    private static BufferedImage spell3(BufferedImage fg, int px, BufferedImage bg) {
+        int bgW = bg.getWidth(null);
+        int bgH = bg.getHeight(null);
+        bg.getGraphics().drawImage(fg, 0, 0, null);
+        BufferedImage resultImg = new BufferedImage(bgW, bgH, BufferedImage.TYPE_USHORT_565_RGB);
+        spell3Process(bg, px, bgW, bgH, resultImg);
+        return resultImg;
     }
 
-    private static BufferedImage spell3_at1(BufferedImage cache, int px) {
-        int w = cache.getWidth(null);
-        int h = cache.getHeight(null);
-        BufferedImage bmp = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
-        int j;
-        if (px > 0) {
-            spell3Process(cache, px, w, h, bmp);
-        } else {
-            for (int y = 0; y < h; y++) {
-                for (int x = 0; x < w; x++) {
-                    j = y + px;
-                    int i = cache.getRGB(x, y);
-                    if (j >= 0) {
-                        bmp.setRGB(x, j, i == 0 ? 1 : i);
-                    } else {
-                        bmp.setRGB(x, j + h, i == 0 ? 1 : i);
-                    }
-                }
-            }
-        }
-        return bmp;
-    }
-
-    private static void spell3Process(BufferedImage cache, int px, int w, int h, BufferedImage bmp) {
-        int j;
-        for (int y = 0; y < h; y++) {
-            for (int x = 0; x < w; x++) {
-                j = y + px;
-                int i = cache.getRGB(x, y);
-                if (j < h) {
-                    bmp.setRGB(x, j, i == 0 ? 1 : i);
-                } else {
-                    bmp.setRGB(x, j - h, i == 0 ? 1 : i);
-                }
+    private static void spell3Process(BufferedImage bg, int px, int width, int height, BufferedImage bmp) {
+        int newY;
+        for (int y = 0; y < height; y++) {
+            newY = y + px;
+            for (int x = 0; x < width; x++) {
+                int i = bg.getRGB(x, y);
+                bmp.setRGB(x, newY < height ? newY : newY - height, i == 0 ? 1 : i);
             }
         }
     }
@@ -170,7 +141,7 @@ public class SeijaImageFactory {
     private static BufferedImage spell4(BufferedImage current, BufferedImage cache) {
         int w = current.getWidth(null);
         int h = current.getHeight(null);
-        BufferedImage bmp = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
+        BufferedImage bmp = new BufferedImage(w, h, BufferedImage.TYPE_USHORT_565_RGB);
         bmp.getGraphics().drawImage(cache.getScaledInstance(w, h, Image.SCALE_SMOOTH), 0, 0, null);
         spell4Process(current, w, h, bmp);
         cache.getGraphics().drawImage(bmp.getScaledInstance(w, h, Image.SCALE_SMOOTH), 0, 0, null);
@@ -180,7 +151,7 @@ public class SeijaImageFactory {
     private static BufferedImage spell4(BufferedImage current) {
         int w = current.getWidth(null);
         int h = current.getHeight(null);
-        BufferedImage bmp = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
+        BufferedImage bmp = new BufferedImage(w, h, BufferedImage.TYPE_USHORT_565_RGB);
         spell4Process(current, w, h, bmp);
         return bmp;
     }
