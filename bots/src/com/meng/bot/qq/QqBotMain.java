@@ -2,9 +2,8 @@ package com.meng.bot.qq;
 
 import com.google.gson.annotations.SerializedName;
 import com.meng.bot.config.ConfigManager;
-import com.meng.tools.normal.FileTool;
-import com.meng.tools.normal.JSON;
-import com.meng.tools.normal.TimeTask;
+import com.meng.bot.qq.hotfix.HotfixClassLoader;
+import com.meng.tools.normal.*;
 import com.meng.tools.sjf.SJFExecutors;
 import com.meng.tools.sjf.SJFPathTool;
 import kotlin.sequences.Sequence;
@@ -13,6 +12,10 @@ import top.mrxiaom.overflow.BotBuilder;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
+import java.nio.file.Path;
+import java.nio.file.WatchEvent;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -80,6 +83,16 @@ public class QqBotMain {
         SJFExecutors.execute(TimeTask.getInstance());
         isLoaded = true;
 
+        for (String fileName : new File(SJFPathTool.getHotFixPath()).list((dir, name) -> name.endsWith(".class"))) {
+            try {
+                if (loadClassFromDisk(fileName.substring(0, fileName.lastIndexOf(".class")), botWrapper, moduleManager)) {
+                    System.out.println(fileName + "热修复成功");
+                }
+            } catch (Exception e) {
+                System.out.println(fileName + "加载失败");
+            }
+        }
+
         //        SJFExecutors.executeAfterTime(new Runnable(){
 //
 //                @Override
@@ -94,7 +107,78 @@ public class QqBotMain {
 //                        }
 //                    }
 //                }
-//            }, 1, TimeUnit.MINUTES);  
+//            }, 1, TimeUnit.MINUTES);
+        FileWatcherService.getInstance().addListener(SJFPathTool.getPersistentPath(), new FileWatcherService.FileWatchedListener() {
+            @Override
+            public void onCreated(WatchEvent<Path> watchEvent) {
+                String fileName = watchEvent.context().toFile().getName();
+                System.out.printf("文件[%s]被创建，时间：%s%n", fileName, TimeFormater.getTime());
+            }
+
+            @Override
+            public void onDeleted(WatchEvent<Path> watchEvent) {
+                String fileName = watchEvent.context().toFile().getName();
+                System.out.printf("文件[%s]被删除，时间：%s%n", fileName, TimeFormater.getTime());
+            }
+
+            @Override
+            public void onModified(WatchEvent<Path> watchEvent) {
+                String fileName = watchEvent.context().toFile().getName();
+                System.out.printf("文件[%s]被修改，时间：%s%n", fileName, TimeFormater.getTime());
+            }
+        });
+        FileWatcherService.getInstance().addListener(SJFPathTool.getHotFixPath(), new FileWatcherService.FileWatchedListener() {
+            @Override
+            public void onCreated(WatchEvent<Path> watchEvent) {
+                String fileName = watchEvent.context().toFile().getName();
+                System.out.printf("类[%s]被创建，加载热修复，时间：%s%n", fileName, TimeFormater.getTime());
+                if (loadClassFromDisk(fileName.substring(0, fileName.lastIndexOf(".class")), botWrapper, moduleManager)) {
+                    System.out.printf("类[%s]被创建，加载热修复成功，时间：%s%n", fileName, TimeFormater.getTime());
+                }
+            }
+
+            @Override
+            public void onDeleted(WatchEvent<Path> watchEvent) {
+                String fileName = watchEvent.context().toFile().getName();
+                System.out.printf("类[%s]被删除，取消热修复，时间：%s%n", fileName, TimeFormater.getTime());
+                moduleManager.hotfixCancel("com.meng.bot.qq.modules." + fileName.substring(0, fileName.lastIndexOf(".class")));
+            }
+
+            @Override
+            public void onModified(WatchEvent<Path> watchEvent) {
+                String fileName = watchEvent.context().toFile().getName();
+                System.out.printf("类[%s]被修改，加载热修复，时间：%s%n", fileName, TimeFormater.getTime());
+                if (!loadClassFromDisk(fileName.substring(0, fileName.lastIndexOf(".class")), botWrapper, moduleManager)) {
+                    System.out.printf("类[%s]被修改，加载热修复成功，时间：%s%n", fileName, TimeFormater.getTime());
+                }
+            }
+        });
+    }
+
+    private boolean loadClassFromDisk(String className, BotWrapper botWrapper, ModuleManager moduleManager) {
+        Class<?> nClass;
+        Object module;
+        try {
+            HotfixClassLoader clsLd = new HotfixClassLoader(new HashMap<>());
+            clsLd.put("com.meng.bot.qq.modules." + className, FileTool.readBytes(SJFPathTool.getHotFixPath() + className + ".class"));
+            nClass = clsLd.loadClass("com.meng.bot.qq.modules." + className);
+            Constructor<?> constructor = nClass.getDeclaredConstructor(BotWrapper.class);
+            module = constructor.newInstance(botWrapper);
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.out.printf("类[%s]加载热修复失败，时间：%s%n", className, TimeFormater.getTime());
+            return false;
+        }
+        try {
+            Method methodLoad = nClass.getMethod("load");
+            methodLoad.invoke(module);
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.out.printf("类[%s]加载热修复失败，时间：%s%n", className, TimeFormater.getTime());
+            return false;
+        }
+        moduleManager.hotfix(module);
+        return true;
     }
 
     public static BotWrapper getBotWrapper(Bot bot) {

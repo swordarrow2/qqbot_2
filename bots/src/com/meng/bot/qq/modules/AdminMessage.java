@@ -1,6 +1,5 @@
 package com.meng.bot.qq.modules;
 
-import com.meng.bot.SJFPermissionDeniedException;
 import com.meng.bot.annotation.CommandDescribe;
 import com.meng.bot.config.Functions;
 import com.meng.bot.config.Person;
@@ -59,18 +58,14 @@ public class AdminMessage extends BaseModule implements IGroupMessageEvent {
             if (command == null) {
                 return false;
             }
-            // System.out.println("Permission:" + botHelper.getGroupMember(groupId, qqId).getPermission().getLevel());
-            //normal member forbid
-            //      if (person == null) {
-            //          return false;
-            //      }
             if (command == Command.help) {
                 sendMessage(event.getGroup(), moduleManager.getFunction());
                 return true;
             }
             Person person = configManager.getPersonFromQQ(qq);
-            if (person != null && !person.hasAdminPermission() && botWrapper.getGroupMember(groupId, qq).getPermission().getLevel() == 0) {
-//                throw new SJFPermissionDeniedException(event);
+            //below bot admin and group admin forbid
+            if ((person == null || !person.hasAdminPermission()) && botWrapper.getGroupMember(groupId, qq).getPermission().getLevel() == 0) {
+                sendQuote(event, "权限不足");
                 return false;
             }
             QuoteReply quoteReply = event.getMessage().get(QuoteReply.Key);
@@ -118,6 +113,42 @@ public class AdminMessage extends BaseModule implements IGroupMessageEvent {
                 case exitGroup -> {
                     event.getGroup().quit();
                     return true;
+                }
+                case addUser -> {
+                    try {
+                        String qqStr = iter.next();
+                        if (!qqStr.matches("\\d{5,11}")) {
+                            sendQuote(event, "格式不正确");
+                            return true;
+                        }
+                        long toAdd = Long.parseLong(qqStr);
+                        if (toAdd < 10000 || toAdd > 9999999999L) {
+                            sendQuote(event, "范围不正确");
+                            return true;
+                        }
+                        Person newUser = configManager.getPersonFromQQ(toAdd);
+                        if (newUser != null) {
+                            sendQuote(event, "已存在，名称：" + newUser.name);
+                            return true;
+                        }
+                        if (!iter.hasNext()) {
+                            sendQuote(event, "参数错误，正确格式：addUser [qq] [name]");
+                            return true;
+                        }
+                        newUser = new Person();
+                        newUser.qq = toAdd;
+                        newUser.name = iter.next();
+                        if (iter.hasNext()) {
+                            sendQuote(event, "参数错误，正确格式：addUser [qq] [name]");
+                            return true;
+                        }
+                        configManager.addPerson(newUser);
+                        configManager.save();
+                        sendMessage(event.getGroup(), String.format("已将%d加入列表", toAdd));
+                        return true;
+                    } catch (Exception e) {
+                        sendMessage(event.getGroup(), e.toString());
+                    }
                 }
                 case addBotToBotList -> {
                     long toAdd = botWrapper.getAt(event.getMessage());
@@ -185,15 +216,13 @@ public class AdminMessage extends BaseModule implements IGroupMessageEvent {
                     return true;
                 }
             }
-            //below bot admin or group master forbid
-
-            if (person != null && !person.hasAdminPermission() && botWrapper.getGroupMember(groupId, qq).getPermission().getLevel() != 2) {
-//                throw new SJFPermissionDeniedException(event);
+            //below bot admin and group master forbid
+            if ((person == null || !person.hasAdminPermission()) && botWrapper.getGroupMember(groupId, qq).getPermission().getLevel() != 2) {
                 return false;
             }
+            //TODO
             //below bot master forbid
-            if (person != null && !person.hasMasterPermission()) {
-//                throw new SJFPermissionDeniedException(event);
+            if (person == null || !person.hasMasterPermission()) {
                 return false;
             }
             switch (command) {
@@ -329,18 +358,17 @@ public class AdminMessage extends BaseModule implements IGroupMessageEvent {
                 }
             }
             //only owner
-            if (person != null && !person.hasOwnerPermission()) {
-//                throw new SJFPermissionDeniedException(event);
+            if (!person.hasOwnerPermission()) {
                 return false;
             }
             switch (command) {
                 case hotFix -> {
                     String nane = iter.next();
                     String code = msg.substring(msg.indexOf(" ", 8));
-                    HotfixClassLoader clsLd = new HotfixClassLoader(new HashMap<String, byte[]>());
+                    HotfixClassLoader clsLd = new HotfixClassLoader(new HashMap<>());
                     SJFCompiler.generate(botWrapper, clsLd, nane, code);
                     Class<?> nClass = clsLd.loadClass(nane);
-                    Constructor<?> constructor = nClass.getDeclaredConstructor(botWrapper.getClass());
+                    Constructor<?> constructor = nClass.getDeclaredConstructor(BotWrapper.class);
                     Object module = constructor.newInstance(botWrapper);
                     try {
                         Method methodLoad = nClass.getMethod("load");
@@ -365,19 +393,6 @@ public class AdminMessage extends BaseModule implements IGroupMessageEvent {
                         sendQuote(event, function + "已启用");
                     } else {
                         sendQuote(event, "无此开关");
-                    }
-                }
-                case saveImage -> {
-                    String arg = iter.next();
-                    if (arg.equals("pixiv")) {
-                        byte[] img = Network.httpGetRaw("https://www.pixiv.cat/" + iter.next() + ".png");
-                        if (img.length < 1024) {
-                            sendQuote(event, "发生错误:" + new String(img));
-                        } else {
-                            File file = SJFPathTool.getR15Path(FileTool.getAutoFileName(img));
-                            FileTool.saveFile(file, img);
-                            sendQuote(event, "已保存" + file.getName());
-                        }
                     }
                 }
             }

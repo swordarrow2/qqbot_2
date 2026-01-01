@@ -4,7 +4,6 @@ import com.meng.bot.annotation.BotData;
 import com.meng.bot.qq.BaseModule;
 import com.meng.tools.normal.ExceptionCatcher;
 import com.meng.tools.normal.FileTool;
-import com.meng.tools.normal.FileWatcherService;
 import com.meng.tools.normal.JSON;
 import com.meng.tools.sjf.SJFPathTool;
 
@@ -30,7 +29,6 @@ public class DataPersistenter {
             if (field.isAnnotationPresent(BotData.class)) {
                 BotData annotationField = field.getAnnotation(BotData.class);
                 File file = SJFPathTool.getPersistentPath(annotationField.value());
-                FileWatcherService.getInstance().registNoActionOnce(file.getName());
                 try {
                     FileTool.saveFile(file, JSON.toJson(field.get(module)).getBytes(StandardCharsets.UTF_8));
                 } catch (IOException | IllegalAccessException | IllegalArgumentException e) {

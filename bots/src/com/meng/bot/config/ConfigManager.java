@@ -265,6 +265,10 @@ public class ConfigManager extends BaseModule {
         configHolder.otherBots.add(toAdd);
     }
 
+    public void addPerson(Person newUser) {
+        configHolder.person.add(newUser);
+    }
+
     public static class ConfigHolder {
 
         public TreeMap<Long, QQGroupConfig> groupCfgs = new TreeMap<>();
