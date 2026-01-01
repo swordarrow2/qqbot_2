@@ -17,7 +17,7 @@ public enum SecondaryCommand {
     music_test_hard("原曲认知hard", "h"),
     music_test_lunatic("原曲认知lunatic", "l"),
 
-    searchPicture("搜索图片", "sp"),
+//    searchPicture("搜索图片", "sp"),
     //    imageTag((CharSequence)"图片标签","tag"),
 //    imagePorn((CharSequence)"图片色情程度","porn"),
 //    imageOcr((CharSequence)"光学字符识别","ocr"),

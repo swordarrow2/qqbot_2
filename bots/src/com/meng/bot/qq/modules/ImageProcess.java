@@ -107,55 +107,7 @@ public class ImageProcess extends BaseModule implements IGroupMessageEvent {
         private ImageProcessNetwok() {
             functionMap = Collections.unmodifiableMap(new HashMap<>() {
                 {
-                    put(SecondaryCommand.searchPicture, (simg, event) -> {
-                        try {
-                            SauceNaoApi.SauceNaoResult mResults = SauceNaoApi.getSauce(new URL(botWrapper.getUrl(simg)).openStream());
-                            if (mResults.getResults().isEmpty()) {
-                                sendQuote(event, "没有相似度较高的图片");
-                                return;
-                            }
-                            MessageChainBuilder messageChainBuilder = new MessageChainBuilder();
-                            SauceNaoApi.SauceNaoResult.Result tmpr = mResults.getResults().get(0);
-                            String[] titleAndMetadata = tmpr.mTitle.split("\n", 2);
-                            if (titleAndMetadata.length > 0) {
-                                messageChainBuilder.append(titleAndMetadata[0]).append("\n");
-                                if (titleAndMetadata.length == 2) {
-                                    tmpr.mColumns.add(0, titleAndMetadata[1]);
-                                }
-                                for (String string : tmpr.mColumns) {
-                                    messageChainBuilder.append(string).append("\n");
-                                }
-                            }
-                            String imgUrl = tmpr.mThumbnail;
-                            if (tmpr.mExtUrls.size() == 2) {
-                                String extUrl = tmpr.mExtUrls.get(1);
-                                if (extUrl.contains("pixiv")) {
-                                    imgUrl = "https://www.pixiv.cat/" + extUrl.substring(extUrl.indexOf("=") + 1) + ".png";
-                                }
-                                messageChainBuilder.append("图片&画师:").append(extUrl).append("\n");
-                                messageChainBuilder.append(tmpr.mExtUrls.get(0)).append("\n");
-                            } else if (tmpr.mExtUrls.size() == 1) {
-                                String extUrl = tmpr.mExtUrls.get(0);
-                                if (extUrl.contains("pixiv")) {
-                                    imgUrl = "https://www.pixiv.cat/" + extUrl.substring(extUrl.indexOf("=") + 1) + ".png";
-                                }
-                                messageChainBuilder.append("链接:").append(tmpr.mExtUrls.get(0)).append("\n");
-                            }
-                            if (!tmpr.mSimilarity.isEmpty()) {
-                                messageChainBuilder.append("相似度:").append(tmpr.mSimilarity).append("\n");
-                            }
-                            URL url1 = new URL(imgUrl);
-                            Image element = botWrapper.toImage(url1, event.getGroup());
-                            messageChainBuilder.add(element);
-                            sendMessage(event.getGroup(), messageChainBuilder.asMessageChain());
-                        } catch (IOException e) {
-                            ExceptionCatcher.getInstance().uncaughtException(Thread.currentThread(), e);
-                            sendMessage(event, e.toString());
-                        }
-                    });
-
                     put(SecondaryCommand.getImageUrl, (img, event) -> sendMessage(event, botWrapper.getUrl(img)));
-
                 }
             });
         }
@@ -222,14 +174,13 @@ public class ImageProcess extends BaseModule implements IGroupMessageEvent {
             } else {
                 nick = configManager.getNickName(event.getGroup().getId(), target.getId());
             }
-
-            if (FileFormat.isFormat(imageFile, "gif")) {
-                if (command == SecondaryCommand.imageUpSeija) {
-                    return SeijaImageFactory.reverseGIF(imageFile, 2);
-                }
-                return generateDynamic(imageFile, trans, nick);
+            if (!FileFormat.isFormat(imageFile, "gif")) {
+                return generateStatic(imageFile, trans, nick);
             }
-            return generateStatic(imageFile, trans, nick);
+            if (command == SecondaryCommand.imageUpSeija) {
+                return SeijaImageFactory.reverseGIF(imageFile, 2);
+            }
+            return generateDynamic(imageFile, trans, nick);
         }
 
         public boolean onMessage(SecondaryCommand command, GroupMessageEvent event) {
