@@ -14,6 +14,9 @@ public class SJFPathTool {
         }
     }
 
+    public static String getHotFixPath() {
+        return getAppDirectory() + "/hotfix/";
+    }
 
     public static String getWordStockImagePath() {
         return getAppDirectory() + "/wordstock_image/";

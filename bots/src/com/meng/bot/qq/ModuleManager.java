@@ -145,7 +145,6 @@ public class ModuleManager extends BaseModule implements IGroupEvent, INudgeEven
 
     @Override
     public boolean onGroupMessage(GroupMessageEvent event) {
-        long qqId = event.getSender().getId();
         long groupId = event.getGroup().getId();
         if (botWrapper.debug) {
             if (groupId != 666247478 && groupId != 927682440) {
@@ -156,15 +155,10 @@ public class ModuleManager extends BaseModule implements IGroupEvent, INudgeEven
             String name = m.getClass().getName();
             if (hotFix.containsKey(name)) {
                 Object module = hotFix.get(name);
-                if (!(module instanceof IGroupMessageEvent)) {
-                    return false;
-                }
-                if (((IGroupMessageEvent) module).onGroupMessage(event)) {
+                if (module instanceof IGroupMessageEvent ie && ie.onGroupMessage(event)) {
                     return true;
                 }
-                continue;
-            }
-            if (m.onGroupMessage(event)) {
+            } else if (m.onGroupMessage(event)) {
                 return true;
             }
         }

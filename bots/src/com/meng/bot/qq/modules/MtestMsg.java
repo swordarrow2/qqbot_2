@@ -1,19 +1,18 @@
 package com.meng.bot.qq.modules;
 
 import com.meng.api.ollama.SimpleChatBot;
-import com.meng.bot.qq.BotWrapper;
-import com.meng.tools.normal.CmdExecuter;
 import com.meng.bot.qq.BaseModule;
+import com.meng.bot.qq.BotWrapper;
 import com.meng.bot.qq.handler.group.IGroupMessageEvent;
+import com.meng.tools.normal.CmdExecuter;
 import com.meng.tools.normal.ExceptionCatcher;
 import com.meng.tools.sjf.SJFPathTool;
+import net.mamoe.mirai.event.events.GroupMessageEvent;
+import net.mamoe.mirai.message.data.Audio;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
-
-import net.mamoe.mirai.event.events.GroupMessageEvent;
-import net.mamoe.mirai.message.data.Audio;
 
 /**
  * @author: 司徒灵羽
@@ -43,7 +42,8 @@ public class MtestMsg extends BaseModule implements IGroupMessageEvent {
 
         if (qqId == 2856986197L) {
             if (msg.equals("test")) {
-                sendMessage(event, "reply");
+                sendMessage(event, "hotfix test");
+                return true;
             }
             if (msg.equals("llm")) {
                 onAI = true;

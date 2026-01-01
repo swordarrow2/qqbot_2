@@ -1,54 +1,35 @@
 package com.meng.tools.normal;
 
 import com.meng.tools.sjf.SJFExecutors;
-import com.meng.tools.sjf.SJFPathTool;
 
 import java.io.IOException;
 import java.nio.file.*;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 
 public class FileWatcherService {
 
     private static final FileWatcherService instance = new FileWatcherService();
-
-    private WatchService watchService;
-    private final HashMap<String, FileWatchedListener> listeners = new HashMap<>();
-    private final HashSet<String> noActionOnceSet = new HashSet<>();
+    private final HashMap<WatchService, FileWatchedListener> listeners = new HashMap<>();
 
     public static FileWatcherService getInstance() {
         return instance;
     }
 
-    public void addListener(String fileName, FileWatchedListener listener) {
-        listeners.put(fileName, listener);
-    }
-
-    public void registNoActionOnce(String fileName) {
-        noActionOnceSet.add(fileName);
-    }
-
-    private FileWatcherService() {
-        Path path = Paths.get(SJFPathTool.getPersistentPath());
+    public void addListener(String strPath, FileWatchedListener listener) {
         try {
-            watchService = FileSystems.getDefault().newWatchService();
+            Path path = Paths.get(strPath);
+            WatchService watchService = FileSystems.getDefault().newWatchService();
             path.register(watchService,
-                    /// 监听文件创建事件
-                    StandardWatchEventKinds.ENTRY_CREATE,
-                    /// 监听文件删除事件
-                    StandardWatchEventKinds.ENTRY_DELETE,
-                    /// 监听文件修改事件
-                    StandardWatchEventKinds.ENTRY_MODIFY);
-
-            SJFExecutors.execute(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        watch();
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
+                    StandardWatchEventKinds.ENTRY_CREATE, // 监听文件创建事件
+                    StandardWatchEventKinds.ENTRY_DELETE, // 监听文件删除事件
+                    StandardWatchEventKinds.ENTRY_MODIFY); // 监听文件修改事件
+            listeners.put(watchService, listener);
+            SJFExecutors.execute(() -> {
+                try {
+                    watch(watchService);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
                 }
             });
         } catch (IOException e) {
@@ -56,38 +37,28 @@ public class FileWatcherService {
         }
     }
 
-    private void watch() throws InterruptedException {
+    private FileWatcherService() {
+
+    }
+
+    private void watch(WatchService watchService) throws InterruptedException {
         while (true) {
             WatchKey watchKey = watchService.take();
             List<WatchEvent<?>> watchEventList = watchKey.pollEvents();
             for (WatchEvent<?> watchEvent : watchEventList) {
                 WatchEvent.Kind<?> kind = watchEvent.kind();
-
                 WatchEvent<Path> curEvent = (WatchEvent<Path>) watchEvent;
-                String fileName = curEvent.context().toFile().getName();
-                if (noActionOnceSet.contains(fileName)) {
-                    noActionOnceSet.remove(fileName);
-                    continue;
-                }
                 if (kind == StandardWatchEventKinds.ENTRY_MODIFY) {
-                    System.out.printf("文件【%s】被修改，时间：%s%n", fileName, TimeFormater.getTime());
-                    if (listeners.containsKey(fileName)) {
-                        listeners.get(fileName).onModified(curEvent);
+                    if (listeners.containsKey(watchService)) {
+                        listeners.get(watchService).onModified(curEvent);
                     }
                 } else if (kind == StandardWatchEventKinds.ENTRY_CREATE) {
-                    System.out.printf("文件【%s】被创建，时间：%s%n", fileName, TimeFormater.getTime());
-                    if (listeners.containsKey(fileName)) {
-                        listeners.get(fileName).onCreated(curEvent);
-                    }
-                } else if (kind == StandardWatchEventKinds.OVERFLOW) {
-                    System.out.printf("文件【%s】被丢弃，时间：%s%n", fileName, TimeFormater.getTime());
-                    if (listeners.containsKey(fileName)) {
-                        listeners.get(fileName).onOverflowed(curEvent);
+                    if (listeners.containsKey(watchService)) {
+                        listeners.get(watchService).onCreated(curEvent);
                     }
                 } else if (kind == StandardWatchEventKinds.ENTRY_DELETE) {
-                    System.out.printf("文件【%s】被删除，时间：%s%n", fileName, TimeFormater.getTime());
-                    if (listeners.containsKey(fileName)) {
-                        listeners.get(fileName).onDeleted(curEvent);
+                    if (listeners.containsKey(watchService)) {
+                        listeners.get(watchService).onDeleted(curEvent);
                     }
                 }
             }
@@ -111,8 +82,6 @@ public class FileWatcherService {
         void onDeleted(WatchEvent<Path> watchEvent);
 
         void onModified(WatchEvent<Path> watchEvent);
-
-        void onOverflowed(WatchEvent<Path> watchEvent);
     }
 }
 

@@ -6,22 +6,6 @@ import com.meng.bot.qq.command.Command;
 import com.meng.bot.qq.handler.group.IGroupMessageEvent;
 import com.meng.bot.qq.handler.group.INudgeEvent;
 import com.meng.tools.sjf.SJFPathTool;
-
-import java.awt.*;
-import java.awt.image.BufferedImage;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.util.*;
-import java.util.List;
-
 import net.mamoe.mirai.contact.NormalMember;
 import net.mamoe.mirai.event.events.GroupMessageEvent;
 import net.mamoe.mirai.event.events.NudgeEvent;
@@ -37,6 +21,17 @@ import org.jfree.data.category.CategoryDataset;
 import org.jfree.data.category.DefaultCategoryDataset;
 
 import javax.imageio.ImageIO;
+import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.sql.*;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
+import java.util.Date;
+import java.util.List;
 
 public class ChatCounter extends BaseModule implements IGroupMessageEvent, INudgeEvent {
 
@@ -151,7 +146,7 @@ public class ChatCounter extends BaseModule implements IGroupMessageEvent, INudg
             Long qq = obj.getKey();
             NormalMember member = botWrapper.getGroupMember(gid, qq);
             stringBuilder.append("\nNo.").append(i + 1).append(":").append(member.getNick())
-                    .append("(").append(qq).append(")").append("-").append(obj.getValue().nudge).append("次");
+                    .append("(").append(qq).append(")").append("->").append(obj.getValue().nudge).append("次");
         }
         return stringBuilder.toString();
     }

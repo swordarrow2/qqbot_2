@@ -1,7 +1,6 @@
 package com.meng.bot.qq.command;
 
 import com.meng.bot.qq.Permission;
-import com.meng.bot.qq.command.SecondaryCommand;
 import net.mamoe.mirai.event.events.GroupMessageEvent;
 
 import java.util.function.Consumer;
@@ -16,6 +15,7 @@ public enum Command {
     translate("翻译至中文", Permission.Normal, "tr"),
     downloadPixivImage("下载Pixiv图片", Permission.Admin, "getPixiv"),
     addBotToBotList("将其他bot账号添加至数据库", Permission.Admin, "addBot"),
+    addUser("将账号信息添加至数据库", Permission.Admin, "addUser"),
     findUserInBotGroups("在bot所在群中查找指定账号", Permission.Admin, "findInGroup"),
     welcomeSentence("设置加群欢迎词", Permission.Admin, "welcome"),
     setGroupName("设置群名称", Permission.Admin, "setGroupName"),
@@ -39,7 +39,7 @@ public enum Command {
     hotfixCancel("取消热更新", Permission.Owner, "hotfixCancel"),
     exitGroup("bot退群", Permission.Admin, "exitGroup", "dissmiss"),
     openAllSwitch("打开所有功能", Permission.Owner, "openAllSwitch"),
-    saveImage("保存图片", Permission.Owner, "saveImage"),
+//    saveImage("保存图片", Permission.Owner, "saveImage"),
     AcgImages("二刺螈图片", Permission.Normal, "st"),
     //    AcgImagesFromFantasyZone("使用FantasyZone接口的二刺螈图片",Permission.Normal,"stf"),
     Jrrp("人品检测", Permission.Normal, "。jrrp"),
@@ -81,7 +81,7 @@ public enum Command {
     imageTransaction(Permission.Normal, "") {
         {
             secondaryCommands = new SecondaryCommand[]{
-                    SecondaryCommand.searchPicture,
+//                    SecondaryCommand.searchPicture,
 //                SecondaryCommand.imageTag,
 //                SecondaryCommand.imagePorn,
 //                SecondaryCommand.imageOcr,
