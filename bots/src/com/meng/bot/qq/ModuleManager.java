@@ -76,7 +76,7 @@ public class ModuleManager extends BaseModule implements IGroupEvent, INudgeEven
         load(AimMessage.class);
         load(QuestionAndAnswer.class);
         load(WordsStock.class);
-        //load(Sentence.class);
+        load(WordChain.class);
         load(RepeaterManager.class);
         return this;
     }

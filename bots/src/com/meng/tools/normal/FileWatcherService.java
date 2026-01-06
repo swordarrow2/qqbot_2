@@ -48,18 +48,22 @@ public class FileWatcherService {
             for (WatchEvent<?> watchEvent : watchEventList) {
                 WatchEvent.Kind<?> kind = watchEvent.kind();
                 WatchEvent<Path> curEvent = (WatchEvent<Path>) watchEvent;
-                if (kind == StandardWatchEventKinds.ENTRY_MODIFY) {
-                    if (listeners.containsKey(watchService)) {
-                        listeners.get(watchService).onModified(curEvent);
+                try {
+                    if (kind == StandardWatchEventKinds.ENTRY_MODIFY) {
+                        if (listeners.containsKey(watchService)) {
+                            listeners.get(watchService).onModified(curEvent);
+                        }
+                    } else if (kind == StandardWatchEventKinds.ENTRY_CREATE) {
+                        if (listeners.containsKey(watchService)) {
+                            listeners.get(watchService).onCreated(curEvent);
+                        }
+                    } else if (kind == StandardWatchEventKinds.ENTRY_DELETE) {
+                        if (listeners.containsKey(watchService)) {
+                            listeners.get(watchService).onDeleted(curEvent);
+                        }
                     }
-                } else if (kind == StandardWatchEventKinds.ENTRY_CREATE) {
-                    if (listeners.containsKey(watchService)) {
-                        listeners.get(watchService).onCreated(curEvent);
-                    }
-                } else if (kind == StandardWatchEventKinds.ENTRY_DELETE) {
-                    if (listeners.containsKey(watchService)) {
-                        listeners.get(watchService).onDeleted(curEvent);
-                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
                 }
             }
 

@@ -17,7 +17,7 @@ public enum Command {
     addBotToBotList("将其他bot账号添加至数据库", Permission.Admin, "addBot"),
     addUser("将账号信息添加至数据库", Permission.Admin, "addUser"),
     findUserInBotGroups("在bot所在群中查找指定账号", Permission.Admin, "findInGroup"),
-    welcomeSentence("设置加群欢迎词", Permission.Admin, "welcome"),
+    welcomeSentence("设置加群欢迎词", Permission.Admin, "welcome","wel"),
     setGroupName("设置群名称", Permission.Admin, "setGroupName"),
     setGroupCard("设置群昵称", Permission.Admin, "setGroupCard"),
     showSwitches("显示功能开关", Permission.Admin, "switch"),
@@ -185,11 +185,11 @@ public enum Command {
     public static Command getCommand(String s) {
         String key = s.replaceAll("\\p{C}", "").trim();
         for (Command cmd : values()) {
-            if (cmd.name().equals(key)) {
+            if (cmd.name().equalsIgnoreCase(key)) {
                 return cmd;
             }
             for (String sub : cmd.cmds) {
-                if (sub.equals(key)) {
+                if (sub.equalsIgnoreCase(key)) {
                     return cmd;
                 }
             }

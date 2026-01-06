@@ -2,10 +2,8 @@ package com.meng.bot.qq.modules;
 
 import com.madgag.gif.fmsware.AnimatedGifEncoder;
 import com.madgag.gif.fmsware.GifDecoder;
-import com.meng.api.SauceNaoApi;
 import com.meng.bot.annotation.CommandDescribe;
 import com.meng.bot.config.Functions;
-import com.meng.bot.config.Person;
 import com.meng.bot.qq.BaseModule;
 import com.meng.bot.qq.BotWrapper;
 import com.meng.bot.qq.command.Command;
@@ -24,7 +22,6 @@ import net.mamoe.mirai.message.data.*;
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.*;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -32,7 +29,6 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
-import java.util.function.Function;
 
 public class ImageProcess extends BaseModule implements IGroupMessageEvent {
 
@@ -67,6 +63,7 @@ public class ImageProcess extends BaseModule implements IGroupMessageEvent {
         if (command == null && messageChain.get(Image.Key) == null) {
             return false;
         }
+
         QuoteReply quoteReply = messageChain.get(QuoteReply.Key);
         try {
             if (quoteReply != null) {

@@ -1,25 +1,35 @@
 package com.meng.tools.normal;
 
 public class Pair<T, U> {
-    private T e1;
+    private T first;
+    private U second;
 
-    public Pair(T e1, U e2) {
-        this.e1 = e1;
-        this.e2 = e2;
+    public Pair(T first, U second) {
+        this.first = first;
+        this.second = second;
     }
 
-    private U e2;
-
-    public T getKey() {
-        return e1;
+    public T getFirst() {
+        return first;
     }
 
-    public U getValue() {
-        return e2;
+    public U getSecond() {
+        return second;
+    }
+
+    public void setFirst(T first) {
+        this.first = first;
+    }
+
+    public void setSecond(U second) {
+        this.second = second;
     }
 
     @Override
     public String toString() {
-        return "Pair{" + "e1=" + e1 + ", e2=" + e2 + '}';
+        return "Pair{" +
+                "first=" + first +
+                ", second=" + second +
+                '}';
     }
 }

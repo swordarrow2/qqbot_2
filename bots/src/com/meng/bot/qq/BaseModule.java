@@ -38,10 +38,11 @@ public abstract class BaseModule {
         DataPersistenter.save(this);
     }
 
-    public BaseModule load() {
-        DataPersistenter.read(this);
-        return this;
-    }
+    public   BaseModule load(){ return this;}
+//    {
+//        DataPersistenter.read(this);
+//        return this;
+//    }
 
     public BaseModule reload() {
         System.out.println(getModuleName() + " reload...");

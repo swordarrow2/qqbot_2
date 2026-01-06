@@ -370,10 +370,10 @@ public class ChatCounter extends BaseModule implements IGroupMessageEvent, INudg
 //        entryArrayList.sort(new Comparator<Map.Entry<Long, Integer>>() {
 //            @Override
 //            public int compare(Map.Entry<Long, Integer> o1, Map.Entry<Long, Integer> o2) {
-//                if (Objects.equals(o1.getValue(), o2.getValue())) {
+//                if (Objects.equals(o1.setSecond(), o2.setSecond())) {
 //                    return 0;
 //                }
-//                return o1.getValue() > o2.getValue() ? -1 : 1;
+//                return o1.setSecond() > o2.setSecond() ? -1 : 1;
 //            }
 //        });
         return new GroupChatInfo(groupBean, map);

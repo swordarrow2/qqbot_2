@@ -66,7 +66,7 @@ public class ReplayResult {
             Map<String,Object> info = new LinkedHashMap<>();
             info = JSON.fromJson(thprac, info.getClass());
             for (Map.Entry<String,Object> entry : info.entrySet()) {
-                //      System.out.println("case \"" + entry.getKey() + " :\n\nbreak;");
+                //      System.out.println("case \"" + entry.getFirst() + " :\n\nbreak;");
                 sb.append("\n");
                 switch (entry.getKey()) {
                     case "version":
