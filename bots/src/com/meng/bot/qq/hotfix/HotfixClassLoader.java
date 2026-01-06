@@ -1,13 +1,22 @@
 package com.meng.bot.qq.hotfix;
 
+import java.util.HashMap;
 import java.util.Map;
 
 public class HotfixClassLoader extends ClassLoader {
-    private final Map<String, byte[]> classes;
+    private final Map<String, byte[]> classes = new HashMap<>();
 
-    public HotfixClassLoader(Map<String, byte[]> classes) {
+    private static HotfixClassLoader instance;
+
+    public static HotfixClassLoader getInstance() {
+        if (instance == null) {
+            instance = new HotfixClassLoader();
+        }
+        return instance;
+    }
+
+    private HotfixClassLoader() {
         super(getSystemClassLoader());
-        this.classes = classes;
     }
 
     public void put(String className, byte[] code) {

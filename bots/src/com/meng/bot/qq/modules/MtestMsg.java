@@ -42,7 +42,7 @@ public class MtestMsg extends BaseModule implements IGroupMessageEvent {
 
         if (qqId == 2856986197L) {
             if (msg.equals("test")) {
-                sendMessage(event, "hotfix test");
+                sendMessage(event, "hotfix");
                 return true;
             }
             if (msg.equals("llm")) {

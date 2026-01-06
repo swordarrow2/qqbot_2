@@ -365,7 +365,7 @@ public class AdminMessage extends BaseModule implements IGroupMessageEvent {
                 case hotFix -> {
                     String nane = iter.next();
                     String code = msg.substring(msg.indexOf(" ", 8));
-                    HotfixClassLoader clsLd = new HotfixClassLoader(new HashMap<>());
+                    HotfixClassLoader clsLd = HotfixClassLoader.getInstance();
                     SJFCompiler.generate(botWrapper, clsLd, nane, code);
                     Class<?> nClass = clsLd.loadClass(nane);
                     Constructor<?> constructor = nClass.getDeclaredConstructor(BotWrapper.class);

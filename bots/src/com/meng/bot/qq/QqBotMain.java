@@ -3,6 +3,7 @@ package com.meng.bot.qq;
 import com.google.gson.annotations.SerializedName;
 import com.meng.bot.config.ConfigManager;
 import com.meng.bot.qq.hotfix.HotfixClassLoader;
+import com.meng.bot.qq.modules.WordChain;
 import com.meng.tools.normal.*;
 import com.meng.tools.sjf.SJFExecutors;
 import com.meng.tools.sjf.SJFPathTool;
@@ -125,16 +126,20 @@ public class QqBotMain {
             public void onModified(WatchEvent<Path> watchEvent) {
                 String fileName = watchEvent.context().toFile().getName();
                 System.out.printf("文件[%s]被修改，时间：%s%n", fileName, TimeFormater.getTime());
+                if (fileName.equals("sentence_chain.json")) {
+                    moduleManager.getModule(WordChain.class).load();
+                    System.out.printf("WordChain已重载");
+                }
             }
         });
         FileWatcherService.getInstance().addListener(SJFPathTool.getHotFixPath(), new FileWatcherService.FileWatchedListener() {
             @Override
             public void onCreated(WatchEvent<Path> watchEvent) {
                 String fileName = watchEvent.context().toFile().getName();
-                System.out.printf("类[%s]被创建，加载热修复，时间：%s%n", fileName, TimeFormater.getTime());
-                if (loadClassFromDisk(fileName.substring(0, fileName.lastIndexOf(".class")), botWrapper, moduleManager)) {
-                    System.out.printf("类[%s]被创建，加载热修复成功，时间：%s%n", fileName, TimeFormater.getTime());
-                }
+//                System.out.printf("类[%s]被创建，加载热修复，时间：%s%n", fileName, TimeFormater.getTime());
+//                if (loadClassFromDisk(fileName.substring(0, fileName.lastIndexOf(".class")), botWrapper, moduleManager)) {
+//                    System.out.printf("类[%s]被创建，加载热修复成功，时间：%s%n", fileName, TimeFormater.getTime());
+//                }
             }
 
             @Override
@@ -159,7 +164,7 @@ public class QqBotMain {
         Class<?> nClass;
         Object module;
         try {
-            HotfixClassLoader clsLd = new HotfixClassLoader(new HashMap<>());
+            HotfixClassLoader clsLd = HotfixClassLoader.getInstance();
             clsLd.put("com.meng.bot.qq.modules." + className, FileTool.readBytes(SJFPathTool.getHotFixPath() + className + ".class"));
             nClass = clsLd.loadClass("com.meng.bot.qq.modules." + className);
             Constructor<?> constructor = nClass.getDeclaredConstructor(BotWrapper.class);
@@ -173,9 +178,7 @@ public class QqBotMain {
             Method methodLoad = nClass.getMethod("load");
             methodLoad.invoke(module);
         } catch (Exception e) {
-            e.printStackTrace();
-            System.out.printf("类[%s]加载热修复失败，时间：%s%n", className, TimeFormater.getTime());
-            return false;
+            System.out.printf("类[%s]没有load方法", className);
         }
         moduleManager.hotfix(module);
         return true;
