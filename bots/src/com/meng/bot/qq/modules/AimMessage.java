@@ -26,7 +26,7 @@ public class AimMessage extends BaseModule implements IGroupMessageEvent {
     public boolean onGroupMessage(GroupMessageEvent gme) {
         long qqId = gme.getSender().getId();
         long groupId = gme.getGroup().getId();
-        if (holder.delayList.size() != 0) {
+        if (!holder.delayList.isEmpty()) {
             Iterator<MessageWait> iter = holder.delayList.iterator();
             while (iter.hasNext()) {
                 MessageWait mw = iter.next();

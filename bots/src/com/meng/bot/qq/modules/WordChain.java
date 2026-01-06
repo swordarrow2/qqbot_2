@@ -6,9 +6,7 @@ import com.meng.bot.config.DataPersistenter;
 import com.meng.bot.qq.BaseModule;
 import com.meng.bot.qq.BotWrapper;
 import com.meng.bot.qq.handler.group.IGroupMessageEvent;
-import com.meng.tools.normal.FileWatcherService;
 import com.meng.tools.normal.Pair;
-import com.meng.tools.sjf.SJFPathTool;
 import net.mamoe.mirai.event.events.GroupMessageEvent;
 import org.jetbrains.annotations.NotNull;
 

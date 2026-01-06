@@ -13,6 +13,8 @@
       <root url="jar://$PROJECT_DIR$/bots/libs/overflow-core-all-1.0.8-all.jar!/" />
     </CLASSES>
     <JAVADOC />
-    <SOURCES />
+    <SOURCES>
+      <root url="jar://$USER_HOME$/.ideaLibSources/animated-gif-lib-1.0-sources.jar!/" />
+    </SOURCES>
   </library>
 </component>

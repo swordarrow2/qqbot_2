@@ -1,6 +1,6 @@
 package com.meng.bot.qq.modules;
 
-import com.meng.bot.annotation.CommandDescribe;
+import com.meng.bot.Main;
 import com.meng.bot.config.Functions;
 import com.meng.bot.config.Person;
 import com.meng.bot.config.QQGroupConfig;
@@ -41,7 +41,7 @@ public class AdminMessage extends BaseModule implements IGroupMessageEvent {
     }
 
     @Override
-    @CommandDescribe(cmd = "AdminMessage", note = "主要给管理员用的指令")
+//    @CommandDescribe(cmd = "AdminMessage", note = "主要给管理员用的指令")
     public boolean onGroupMessage(GroupMessageEvent event) {
         long qq = event.getSender().getId();
         long groupId = event.getGroup().getId();
@@ -59,7 +59,8 @@ public class AdminMessage extends BaseModule implements IGroupMessageEvent {
                 return false;
             }
             if (command == Command.help) {
-                sendMessage(event.getGroup(), moduleManager.getFunction());
+//                sendMessage(event.getGroup(), moduleManager.getFunction());
+                sendMessage(event.getGroup(), "SJF bot v" + Main.VERSION);
                 return true;
             }
             Person person = configManager.getPersonFromQQ(qq);
@@ -379,24 +380,26 @@ public class AdminMessage extends BaseModule implements IGroupMessageEvent {
                     }
                     moduleManager.hotfix(module);
                     sendMessage(event.getGroup(), nane + " loaded");
+                    return true;
                 }
                 case hotfixCancel -> {
                     Object obj = moduleManager.hotfixCancel(iter.next());
                     sendQuote(event, obj != null ? "canceled" : "cancel failed");
+                    return true;
                 }
                 case openAllSwitch -> {
                     Functions function = Functions.get(iter.next());
-                    if (function != null) {
-                        for (Group group : botWrapper.getGroups()) {
-                            configManager.getGroupConfig(group).setFunctionEnable(function);
-                        }
-                        sendQuote(event, function + "已启用");
-                    } else {
+                    if (function == null) {
                         sendQuote(event, "无此开关");
+                        return true;
                     }
+                    for (Group group : botWrapper.getGroups()) {
+                        configManager.getGroupConfig(group).setFunctionEnable(function);
+                    }
+                    sendQuote(event, function + "已启用");
+                    return true;
                 }
             }
-            return true;
         } catch (Exception e) {
             ExceptionCatcher.getInstance().catchException(botWrapper, e);
             sendGroupMessage(groupId, "参数错误:" + e);
